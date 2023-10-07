@@ -1,0 +1,8 @@
+{"name":"sky_and_sun","class":"SimGroup","persistentId":"e6a63c7f-2188-49e0-b032-a184b78ece04","__parent":"MissionGroup"}
+{"name":"Water","class":"SimGroup","persistentId":"01142648-da5e-4557-956c-0f4a6122390a","__parent":"MissionGroup"}
+{"name":"PlayerDropPoints","class":"SimGroup","persistentId":"5e1822d6-0280-4c7d-9cae-5ab82ab1f00a","__parent":"MissionGroup","enabled":"1"}
+{"class":"TSStatic","persistentId":"bbc7b7be-698c-4a8b-895a-2d747d964a99","__parent":"MissionGroup","position":[-0.153846964,379.423401,124.176003],"collisionType":"Visible Mesh Final","decalType":"Visible Mesh Final","dynamic":true,"meshCulling":true,"originSort":true,"shapeName":"/levels/battersea/art/shapes/base/base.dae","useInstanceRenderData":true}
+{"class":"TSStatic","persistentId":"3992c737-ded3-4b84-9772-c16bb6acf629","__parent":"MissionGroup","position":[-0.153846964,379.423401,124.176483],"collisionType":"None","decalType":"None","dynamic":true,"meshCulling":true,"originSort":true,"shapeName":"/levels/battersea/art/shapes/no collision/no collision.dae","useInstanceRenderData":true}
+{"name":"others","class":"SimGroup","persistentId":"4907e168-5ad0-4125-8dc3-4ab5aa3f0f0e","__parent":"MissionGroup"}
+{"name":"hitboxes","class":"SimGroup","persistentId":"8bb1a6fa-b832-4e33-9f0d-bd7c68deed96","__parent":"MissionGroup"}
+{"name":"SimGroup_n","class":"SimGroup","persistentId":"0c484e08-3b9c-4b8c-ade5-787820a7bbca","__parent":"MissionGroup"}

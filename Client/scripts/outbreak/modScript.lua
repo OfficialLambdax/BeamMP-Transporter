@@ -1,2 +1,0 @@
-load("outbreak")
-registerCoreModule("outbreak")

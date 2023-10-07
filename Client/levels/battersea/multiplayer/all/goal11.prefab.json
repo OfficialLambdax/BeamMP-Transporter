@@ -1,0 +1,3 @@
+{"name":"goalTrigger","class":"BeamNGTrigger","persistentId":"c9790c9c-3e8f-4494-9f29-8122db3f7934","__parent":"goal11_group","position":[-17.5671921,407.494995,144.201797],"scale":[6,6,30],"triggerType":"Box"}
+{"name":"goal11_group","class":"SimGroup","persistentId":"8b01b294-55da-4f8a-9310-cab42db1371a","groupPosition":"0 0 0"}
+{"name":"goal11TSStatic","class":"TSStatic","persistentId":"73298e42-0472-4931-ac40-98f574d70f3e","__parent":"goal11_group","position":[-17.5461349,407.494995,132.629639],"collisionType":"None","decalType":"None","instanceColor":[0,1,0.00179100037,1],"isRenderEnabled":false,"scale":[30,30,7],"shapeName":"/art/shapes/interface/single_faded_column.dae","useInstanceRenderData":true}

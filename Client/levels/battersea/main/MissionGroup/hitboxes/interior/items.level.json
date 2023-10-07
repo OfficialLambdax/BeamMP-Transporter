@@ -1,0 +1,4 @@
+{"name":"int-platforms","class":"SimGroup","persistentId":"39c78365-0958-4bf6-b774-464a8b7f5bfc","__parent":"interior"}
+{"name":"int-posts","class":"SimGroup","persistentId":"6ca0a419-8325-4c99-a5ba-63105d0abdad","__parent":"interior"}
+{"name":"int-walls","class":"SimGroup","persistentId":"0bbc44ac-1ed6-41db-b3c0-61c61b1ebd56","__parent":"interior"}
+{"name":"iother","class":"SimGroup","persistentId":"3f420480-8a99-444e-a0ad-0c5117d9c391","__parent":"interior"}

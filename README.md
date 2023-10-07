@@ -1,15 +1,18 @@
-# BeamMP-Outbreak
+# BeamMP-Transporter
 
-This is a recreation of the Outbreak/Infection mode from Dirt 3 for BeamMP
+This is a recreation of the Transporter/Capture the flag gamemode from Dirt 3 for BeamMP
 
-How to use,
+Prerequisites:
+  - Cobalt Essentials (https://forum.beammp.com/t/cobalt-essentials-v1-7-6-release/61)
+
+Installation:
+  Download the latest release and copy the server and client folders into your server's Resources/ folder
+
+Usage:
   go to the release page and download the latest version, then unpack the zip into the server recourses and it should be good to go,
-  then type /outbreak help in chat to get a list of all the commands, then finally to start a game you type /outbreak start.
+  then type "/transporter help" or "/ctf help" in chat to get a list of all the commands, then finally to start a game you type /outbreak start.
 
-Thanks to Stefan750 for some help with colors and screen tint and Saile for help with the weighted randomizer
-Also thanks to the Neilogical/Camodo crew aswell as the Failrace crew for feedback and testing.
+Thanks to Olrosse for laying most of the foundation in this project with his Infection gamemode.
 
-Some notes
-  this build may not be very suitable for public servers yet as it is very easy to cheat, but it's good for private servers where you might have some personalised rules haha
-
-  Also feel free to use this mod as reference if you want to make your own game modes, it's not the best documented and there's probably some wacky code haha, but maybe it's helpful for some
+Some notes:
+ There is a lag spike everytime a luatrigger is triggered, I'm still trying to fix that. You can create your own areas on any map, in time I will create a tutorial on how to do this. If you find any issues, let me know either through github or the BeamMP forum.
