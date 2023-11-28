@@ -302,8 +302,6 @@ local function gameSetup()
 			player.team = chosenTeam
 			gameState.players[Player] = player
 			teamCount = teamCount + 1
-			--MP.TriggerClientEvent(-1, "addPlayers", tostring(k))
-			MP.TriggerClientEvent(-1, "addPlayers", Player)
 		end
 	end
 
