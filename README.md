@@ -15,4 +15,4 @@ Usage:
 Thanks to Olrosse for laying most of the foundation in this project with his Infection gamemode.
 
 Some notes:
- There is a lag spike everytime a luatrigger is triggered, I'm still trying to fix that. You can create your own areas on any map, in time I will create a tutorial on how to do this. If you find any issues, let me know either through github or the BeamMP forum.
+ You can create your own areas on any map, in time I will create a tutorial on how to do this. If you find any issues, let me know either through github or the BeamMP forum.
