@@ -355,70 +355,68 @@ local function removePrefabs(type)
 	log('D', logTag, "removePrefabs(" .. type .. ") Called" )
 	if type == "flag" and flagPrefabActive then 
 		removePrefab(flagPrefabName)
-		log('D', logTag, "Removing: " .. flagPrefabName)
+		-- log('D', logTag, "Removing: " .. flagPrefabName)
 		flagPrefabActive = false
 	elseif type == "goal" and goalPrefabActive then 
 		removePrefab(goalPrefabName)
-		log('D', logTag, "Removing: " .. goalPrefabName)
+		-- log('D', logTag, "Removing: " .. goalPrefabName)
 		goalPrefabActive = false
 	elseif type == "all" then
 		if flagPrefabActive then
 			removePrefab(flagPrefabName)
-			log('D', logTag, "Removing: " .. flagPrefabName)
+			-- log('D', logTag, "Removing: " .. flagPrefabName)
 			flagPrefabActive = false
 		end
 		if goalPrefabActive then
 			removePrefab(goalPrefabName)
-			log('D', logTag, "Removing: " .. goalPrefabName)
+			-- log('D', logTag, "Removing: " .. goalPrefabName)
 			goalPrefabActive = false
 		end
 		if obstaclesPrefabActive then
 			removePrefab(obstaclesPrefabName)
-			log('D', logTag, "Removing: " .. obstaclesPrefabName)
+			-- log('D', logTag, "Removing: " .. obstaclesPrefabName)
 			obstaclesPrefabActive = false
+			be:reloadStaticCollision(true)
 		end
 		local prefabPath = ""
 		local levelName = core_levels.getLevelName(getMissionFilename())
 		local flags = "1"
 		local goals = "1"
 		log('D', logTag, "Removing everything in; Map: " .. levelName .. " and Area: " .. currentArea)
-		log('D', logTag, "mapData: " .. dump(mapData))
+		-- log('D', logTag, "mapData: " .. dump(mapData))
 		local levelData = {}
 		levelData = mapData[levelName]["levelData"]
-		log('D', logTag, "levelData: " .. dump(levelData))
+		-- log('D', logTag, "levelData: " .. dump(levelData))
 		local areaData = {}
 		areaData = levelData[currentArea]
-		log('D', logTag, "areaData (" .. currentArea .. "): " .. dump(areaData))
+		-- log('D', logTag, "areaData (" .. currentArea .. "): " .. dump(areaData))
 		flags = areaData["flagcount"]
 		goals = areaData["goalcount"]
 		log('D', logTag, "Flags: " .. flags .. " and Goals: " .. goals)
 		for flagID=1,tonumber(flags) do
 			prefabPath = "flag" .. flagID
-			log('D', logTag, "Removing: " .. prefabPath)
+			-- log('D', logTag, "Removing: " .. prefabPath)
 			removePrefab(prefabPath)
 		end
 		for goalID=1,tonumber(goals) do
 			prefabPath = "goal" .. goalID
-			log('D', logTag, "Removing: " .. prefabPath)
+			-- log('D', logTag, "Removing: " .. prefabPath)
 			removePrefab(prefabPath)
 		end
 	end
-	be:reloadStaticCollision(true)
 end
 
 function onBeamNGTrigger(data)
-	-- log('D', logTag, dump(data))
+	-- log('D', logtag, "trigger data: " .. dump(data))
     if data == "null" then return end
 	if data.event ~= "enter" then return end
     local trigger = data.triggerName
     if MPVehicleGE.isOwn(data.subjectID) == true then
-        if trigger == "flagTrigger" then
-			-- log('D', logTag, trigger .. " triggered")
+		if trigger == "flagTrigger" then
 			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 		elseif trigger == "goalTrigger" then
-            -- log('D', logTag, trigger .. " triggered")
 			if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
-        end
+		end
     end
 end
 

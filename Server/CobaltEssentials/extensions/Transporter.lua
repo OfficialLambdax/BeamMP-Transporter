@@ -36,6 +36,7 @@ local defaultColorPulse = true -- if the car color should pulse between the car 
 local defaultFlagTint = true -- if the infecor should have a blue tint
 local defaultDistancecolor = 0.3 -- max intensity of the red filter
 local teams = false
+local allowFlagCarrierResets = false
 
 local TransporterCommands = {
 	transporter = {orginModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Enables the .zip with the filename specified."},
@@ -197,19 +198,27 @@ local function updateClients()
 	end
 end
 
-local function spawnFlagAndGoal()
+local function spawnFlag()
 	rand() --Some implementation need this before the numbers become random
 	rand()
 	rand()
 	local flagID = rand(1,flagPrefabCount)	
+	CElog("Chosen flag: levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json")
+	MP.TriggerClientEvent(-1, "spawnFlag", "levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
+end
+
+local function spawnGoal()
 	rand() --Some implementation need this before the numbers become random
 	rand()
 	rand()
 	local goalID = rand(1,goalPrefabCount)
-	CElog("Chosen flag: levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json")
 	CElog("Chosen goal: levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json")
-	MP.TriggerClientEvent(-1, "spawnFlag", "levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
 	MP.TriggerClientEvent(-1, "spawnGoal", "levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
+end
+
+local function spawnFlagAndGoal()
+	spawnFlag()
+	spawnGoal()
 end
 
 local function applyStuff(targetDatabase, tables)
@@ -231,7 +240,6 @@ function setLevelName(playerID, name)
 end
 
 local function onAreaChange()	
-	-- MP.TriggerClientEvent(-1, "removePrefabs", "all") --TODO find a way to set the area before this is called when only using transporter show
 	for key,areaName in pairs(areaNames) do
 		if areaName == requestedArea then
 			area = areaName
@@ -251,14 +259,16 @@ local function onAreaChange()
 end
 
 local function teamAlreadyChosen(team)
-	return chosenTeams[team]
+	return chosenTeams[team].chosen
 end
 
 local function gameSetup()
 	math.randomseed(os.time())
 	onAreaChange()
 	for k,v in pairs(possibleTeams) do
-		chosenTeams[v] = false  
+		chosenTeams[v] = {}
+		chosenTeams[v].chosen = false
+		chosenTeams[v].score = 0  
 	end
 	gameState = {}
 	gameState.players = {}
@@ -274,9 +284,9 @@ local function gameSetup()
 			playerCount = playerCount + 1
 		end
 	end
-	if teamSize % 2 == 0 then
+	if playerCount % 2 == 0 then
 		teamSize = playerCount / 2
-	elseif teamSize % 3 == 0 then
+	elseif playerCount % 3 == 0 then
 		teamSize = playerCount / 3
 	else
 		teamSize = 1
@@ -286,10 +296,10 @@ local function gameSetup()
 	for ID,Player in pairs(MP.GetPlayers()) do
 		if teamCount == teamSize then
 			chosenTeam = possibleTeams[rand(1,#possibleTeams)]
-			while teamAlreadyChosen(chosenTeam) do
+			while teamAlreadyChosen(chosenTeam) do --possibility for endless loop, maybe need some better way for this
 				chosenTeam = possibleTeams[rand(1,#possibleTeams)]
 			end
-			chosenTeams[chosenTeam] = true
+			chosenTeams[chosenTeam].chosen = true
 			teamCount = 0
 		end
 		if MP.IsPlayerConnected(ID) and MP.GetPlayerVehicles(ID) then
@@ -349,9 +359,23 @@ local function gameEnd(reason)
 	end
 
 	MP.SendChatMessage(-1,"The scores this round are: ")
-
-	for playername,player in pairs(gameState.players) do
-		MP.SendChatMessage(-1, "" .. playername .. ": " .. player.score)
+	if teams and chosenTeams then
+		for teamName, teamData in pairs(chosenTeams) do
+			if chosenTeams[teamName].chosen then
+				-- CElog(dump(chosenTeams))
+				chosenTeams[teamName].score = 0
+				for playername,player in pairs(gameState.players) do
+					if teamName == player.team then
+						chosenTeams[teamName].score = chosenTeams[teamName].score + player.score
+					end
+				end
+				MP.SendChatMessage(-1, "" .. teamName .. ": " .. chosenTeams[teamName].score)
+			end
+		end
+	else
+		for playername,player in pairs(gameState.players) do
+			MP.SendChatMessage(-1, "" .. playername .. ": " .. player.score)
+		end
 	end
 end
 
@@ -386,6 +410,7 @@ local function transporter(player, argument)
 		MP.SendChatMessage(player.playerID, "\"/transporter time limit \'minutes\' \" to set the duration of a transporter game to the specified minutes.")
 		MP.SendChatMessage(player.playerID, "\"/transporter score limit \'points\' \" to set the score limit of a transporter game to the specified score.")
 		MP.SendChatMessage(player.playerID, "\"/transporter teams \'true/false\' \" to specify if the transporter games uses teams.")
+		MP.SendChatMessage(player.playerID, "\"/transporter allow resets \'true/false\' \" to specify if the flag carrier can reset without losing the flag.")
 		MP.SendChatMessage(player.playerID, "\"/transporter create \'flag/goal\' \" to create a goal or flag, so you can make your own areas! \n Consult the tutorial on GitHub to learn how to do this.")
 	elseif argument == "show" then
 		onAreaChange()
@@ -424,6 +449,14 @@ local function transporter(player, argument)
 			teams = false
 		end
 		MP.SendChatMessage(-1, "Playing with teams: " .. dump(teams) .. " (available options are true or false)")
+	elseif string.find(argument, "allow resets %S") then
+		local allowedString = string.sub(argument,14,10000)
+		if allowedString == "true" then
+			allowFlagCarrierResets = true
+		elseif allowedString == "false" then
+			allowFlagCarrierResets = false
+		end
+		MP.SendChatMessage(-1, "Resets allowed when carrying flag: " .. dump(allowFlagCarrierResets) .. " (available options are true or false)")
 	elseif string.find(argument, "create %S") then
 		local createString = string.sub(argument,8,10000) 
 		if createString == "flag" then
@@ -561,6 +594,18 @@ local function onInit(stateData)
 	CElog("onInit done" .. dump(gameState))
 end
 
+--resets flagcarrier and spawns a new flag
+local function resetFlagCarrier(player) 
+	-- CElog("" .. dump(player))
+	if gameState.gameRunning and not gameState.gameEnding and player and player.name and gameState.players[player.name].hasFlag then
+		if gameState.players[player.name].hasFlag then
+			gameState.players[player.name].hasFlag = false
+			spawnFlag()
+			return
+		end
+	end
+end
+
 local function onUnload()
 
 end
@@ -614,7 +659,8 @@ end
 
 --called whenever a player resets their vehicle, holding insert spams this function.
 local function onVehicleReset(player, vehID, data)
-
+	if allowFlagCarrierResets then return end
+	resetFlagCarrier(player)
 end
 
 --called whenever a vehicle is deleted
