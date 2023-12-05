@@ -5,6 +5,9 @@ local mod = math.fmod
 
 local gamestate = {players = {}, settings = {}}
 
+--blocked inputs when flag carrier
+local blockedInputActions = {'slower_motion','faster_motion','toggle_slow_motion','modify_vehicle','vehicle_selector','saveHome','loadHome', 'reset_all_physics','recover_vehicle_alt','toggleTraffic', "recover_vehicle", "reload_vehicle", "reload_all_vehicles", "parts_selector", "dropPlayerAtCamera", "nodegrabberRender",'reset_physics','switch_previous_vehicle','switch_next_vehicle'}
+
 local colors = {["Red"] = {255,50,50,255},["LightBlue"] = {50,50,160,255},["Green"] = {50,255,50,255},["Yellow"] = {200,200,25,255},["Purple"] = {150,50,195,255}}
 local thisAreaData = {}
 local thisLevelData = {}
@@ -276,6 +279,25 @@ function mergeTransporterTable(table,gamestateTable)
 	end
 end
 
+function allowResets()
+	-- log('D', logtag, "allowResets called")
+	if not gamestate.allowFlagCarrierResets then
+		extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+		extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+	end
+end
+
+function disallowResets()
+	-- log('D', logtag, "disallowResets called")
+	if not gamestate.allowFlagCarrierResets then --debating if this should stay here
+		extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+		extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', true)
+	else
+		extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+		extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+	end
+end
+
 local function spawnFlag(filepath, offset) 
 	log('D', logTag, filepath)
 	local offsetString = '0 0 0'
@@ -406,6 +428,10 @@ local function removePrefabs(type)
 	end
 end
 
+function onGameEnd()
+	allowResets()
+end
+
 function onBeamNGTrigger(data)
 	-- log('D', logtag, "trigger data: " .. dump(data))
     if data == "null" then return end
@@ -413,8 +439,19 @@ function onBeamNGTrigger(data)
     local trigger = data.triggerName
     if MPVehicleGE.isOwn(data.subjectID) == true then
 		if trigger == "flagTrigger" then
+			if not gamestate.allowFlagCarrierResets then
+				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', true)
+			else
+				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+			end
 			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
-		elseif trigger == "goalTrigger" then
+		elseif trigger == "goalTrigger" then	
+			if not gamestate.allowFlagCarrierResets then
+				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+			end
 			if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
 		end
     end
@@ -482,6 +519,17 @@ function updateTransporterGameState(data)
 	local time = 0
 
 	if gamestate.time then time = gamestate.time-1 end
+	-- for playerName, player in pairs(gamestate.players) do
+	-- 	if player.resetTimerActive then
+	-- 		if player.resetTimer > 0 then
+	-- 			player.resetTimer = player.resetTimer - 1
+	-- 		else
+	-- 			player.resetTimerActive = false
+	-- 			extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
+	-- 			extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)	
+	-- 		end
+	-- 	end
+	-- end
 
 	local txt = ""
 
@@ -537,6 +585,23 @@ function nametags(ownerName,player,vehicle) --draws flag nametags on people
 		end
 	end
 end
+
+-- local function onVehicleResetted(gameVehicleID)
+-- 	log('D', logtag, "OnVehicleResetted called")
+-- 	if MPVehicleGE then
+-- 		if MPVehicleGE.isOwn(gameVehicleID) then
+-- 			local veh = be:getObjectByID(gameVehicleID)
+-- 			if veh then
+-- 				if not gamestate.players[veh.ownerName].allowedResets then
+-- 					local txt = ""
+-- 					txt = "You can reset in " .. gamestate.players[veh.ownerName].resetTimer .. "seconds"
+-- 					gamestate.players[veh.ownerName].resetTimerActive = true
+-- 					guihooks.message({txt = txt}, 1, "nil")
+-- 				end
+-- 			end
+-- 		end
+-- 	end
+-- end
 
 local function color(player,vehicle,team,dt)
 	local teamColor
@@ -653,10 +718,14 @@ local function onPreRender(dt)
 	end
 
 	if flagPrefabActive and flagLocation then
-		debugDrawer:drawTextAdvanced(flagLocation, String("Flag"), ColorF(1,1,1,1), true, false, ColorI(50,50,200,255))
+		local veh = be:getObjectByID(currentVehID)	
+		local vehPos = veh:getPosition()
+		debugDrawer:drawTextAdvanced(flagLocation, String("Flag " .. round(distance(vehPos, flagLocation), 0) .. "m"), ColorF(1,1,1,1), true, false, ColorI(50,50,200,255))
 	end
 	if goalPrefabActive and goalLocation then
-		debugDrawer:drawTextAdvanced(goalLocation, String("Goal"), ColorF(1,1,1,1), true, false, ColorI(50,200,50,255))
+		local veh = be:getObjectByID(currentVehID)	
+		local vehPos = veh:getPosition()
+		debugDrawer:drawTextAdvanced(goalLocation, String("Goal " .. round(distance(vehPos, goalLocation), 0)) .. "m", ColorF(1,1,1,1), true, false, ColorI(50,200,50,255))
 	end
 	local tempSetting = defaultRedFadeDistance
 	if gamestate.settings then
@@ -671,7 +740,7 @@ local function onPreRender(dt)
 end
 
 local function onResetGameplay(id)
-
+	log('D', logtag, "onResetGameplay called")
 end
 
 local function onExtensionUnloaded()
@@ -695,6 +764,9 @@ if MPGameNetwork then AddEventHandler("receiveTransporterGameState", receiveTran
 if MPGameNetwork then AddEventHandler("requestTransporterGameState", requestTransporterGameState) end
 if MPGameNetwork then AddEventHandler("updateTransporterGameState", updateTransporterGameState) end
 if MPGameNetwork then AddEventHandler("sendTransporterContact", sendTransporterContact) end
+if MPGameNetwork then AddEventHandler("allowResets", allowResets) end
+if MPGameNetwork then AddEventHandler("disallowResets", disallowResets) end
+if MPGameNetwork then AddEventHandler("onGameEnd", onGameEnd) end
 -- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
 -- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
 
@@ -719,6 +791,10 @@ M.removePrefabs = removePrefabs
 M.setCurrentArea = setCurrentArea
 M.onExtensionUnloaded = onExtensionUnloaded
 M.onResetGameplay = onResetGameplay
+M.onGameEnd = onGameEnd
+M.allowResets = allowResets
+M.disallowResets = disallowResets
+-- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger
 M.onBeamNGTrigger = onBeamNGTrigger

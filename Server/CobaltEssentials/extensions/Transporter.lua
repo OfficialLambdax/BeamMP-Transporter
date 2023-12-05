@@ -1,7 +1,8 @@
 --Transporter by Julianstap, 2023
 
 local M = {}
-M.COBALT_VERSION = "1.7.5"
+M.COBALT_VERSION = "1.7.6"
+utils.setLogType("CTF",93)
 
 local floor = math.floor
 local mod = math.fmod
@@ -29,6 +30,7 @@ gameState.gameEnding = false
 gameState.currentArea = ""
 gameState.flagCount = 1
 gameState.goalCount = 1
+gameState.allowFlagCarrierResets = false
 
 local roundLength = 5*60 -- length of the game in seconds
 local defaultRedFadeDistance = 100 -- the distance between a flag carrier and someone that doesn't have the flag, where the screen of the flag carrier will turn red
@@ -36,12 +38,11 @@ local defaultColorPulse = true -- if the car color should pulse between the car 
 local defaultFlagTint = true -- if the infecor should have a blue tint
 local defaultDistancecolor = 0.3 -- max intensity of the red filter
 local teams = false
-local allowFlagCarrierResets = false
 
 local TransporterCommands = {
-	transporter = {orginModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Enables the .zip with the filename specified."},
-	ctf = {orginModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."},
-	CTF = {orginModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."}
+	transporter = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Enables the .zip with the filename specified."},
+	ctf = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."},
+	CTF = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."}
 }
 
 function dump(o)
@@ -310,6 +311,9 @@ local function gameSetup()
 			player.hasFlag = false
 			player.score = 0
 			player.team = chosenTeam
+			-- player.allowedResets = true
+			-- player.resetTimer = 3
+			-- player.resetTimerActive = false
 			gameState.players[Player] = player
 			teamCount = teamCount + 1
 		end
@@ -343,6 +347,7 @@ end
 
 local function gameEnd(reason)
     MP.TriggerClientEvent(-1, "removePrefabs", "all")
+    MP.TriggerClientEvent(-1, "onGameEnd", "nil")
 	gameState.gameEnding = true
 	if reason == nil or reason == "nil" then
 		MP.SendChatMessage(-1,"Game stopped for uknown reason")
@@ -397,7 +402,7 @@ local function createGoal(player)
 	MP.TriggerClientEvent(player.playerID, "onCreateGoal", "nil")
 end
 
-local function transporter(player, argument)
+function transporter(player, argument)
 	if argument == "help" then
 		MP.SendChatMessage(player.playerID, "Anything between double qoutes; \"\" is a command. \n Anything between single quotes; \'\' is an argument, \n if there is a slash it means those are the argument options for that command.")
 		MP.SendChatMessage(player.playerID, "\"/transporter start\" to start a transporter game.")
@@ -452,11 +457,11 @@ local function transporter(player, argument)
 	elseif string.find(argument, "allow resets %S") then
 		local allowedString = string.sub(argument,14,10000)
 		if allowedString == "true" then
-			allowFlagCarrierResets = true
+			gameState.allowFlagCarrierResets = true
 		elseif allowedString == "false" then
-			allowFlagCarrierResets = false
+			gameState.allowFlagCarrierResets = false
 		end
-		MP.SendChatMessage(-1, "Resets allowed when carrying flag: " .. dump(allowFlagCarrierResets) .. " (available options are true or false)")
+		MP.SendChatMessage(-1, "Resets allowed when carrying flag: " .. dump(gameState.allowFlagCarrierResets) .. " (available options are true or false)")
 	elseif string.find(argument, "create %S") then
 		local createString = string.sub(argument,8,10000) 
 		if createString == "flag" then
@@ -491,11 +496,11 @@ local function transporter(player, argument)
 	end	
 end
 
-local function ctf(player, argument) --alias for transporter
+function ctf(player, argument) --alias for transporter
 	transporter(player, argument)
 end
 
-local function CTF(player, argument) --alias for transporter
+function CTF(player, argument) --alias for transporter
 	transporter(player, argument)
 end
 
@@ -600,6 +605,9 @@ local function resetFlagCarrier(player)
 	if gameState.gameRunning and not gameState.gameEnding and player and player.name and gameState.players[player.name].hasFlag then
 		if gameState.players[player.name].hasFlag then
 			gameState.players[player.name].hasFlag = false
+			if not gameState.allowFlagCarrierResets then --whenever the flag switches places the previous flag carrier should be able to reset again
+				MP.TriggerClientEvent(player.playerID, "allowResets", "nil")
+			end
 			spawnFlag()
 			return
 		end
@@ -622,7 +630,7 @@ end
 
 --called whenever someone begins connecting to the server
 local function onPlayerConnecting(player)
-	MP.TriggerClientEventJson(player.ID, "receiveTransporterGameState", gameState)
+	MP.TriggerClientEventJson(player.playerID, "receiveTransporterGameState", gameState)
 end
 
 --called when a player begins loading
@@ -659,7 +667,7 @@ end
 
 --called whenever a player resets their vehicle, holding insert spams this function.
 local function onVehicleReset(player, vehID, data)
-	if allowFlagCarrierResets then return end
+	if gameState.allowFlagCarrierResets then return end
 	resetFlagCarrier(player)
 end
 
@@ -704,14 +712,19 @@ function onTransporterContact(localPlayerID, data)
 			if gameState.teams then
 				if localPlayer.team == remotePlayer.team then return end
 			end
+			local remotePlayerID = tonumber(data)
 			if localPlayer.hasFlag == true and remotePlayer.hasFlag == false then
 				gameState.players[localPlayerName].hasFlag = false
 				gameState.players[remotePlayerName].hasFlag = true
+				MP.TriggerClientEvent(localPlayerID, "allowResets", "nil")
+				MP.TriggerClientEvent(remotePlayerID, "disallowResets", "nil")
 				gameState.players[remotePlayerName].remoteContact = false
 				MP.SendChatMessage(-1, "".. remotePlayerName .." has captured the flag!")
 			elseif remotePlayer.hasFlag == true and localPlayer.hasFlag == false then
 				gameState.players[localPlayerName].hasFlag = true
 				gameState.players[remotePlayerName].hasFlag = false
+				MP.TriggerClientEvent(localPlayerID, "disallowResets", "nil")
+				MP.TriggerClientEvent(remotePlayerID, "allowResets", "nil")
 				gameState.players[localPlayerName].localContact = false
 				MP.SendChatMessage(-1, "".. localPlayerName .." has captured the flag!")
 			end
