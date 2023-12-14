@@ -6,12 +6,12 @@ local mod = math.fmod
 local gamestate = {players = {}, settings = {}}
 
 --blocked inputs when flag carrier
-local blockedInputActions = {'slower_motion','faster_motion','toggle_slow_motion','modify_vehicle','vehicle_selector','saveHome','loadHome', 'reset_all_physics','recover_vehicle_alt','toggleTraffic', "recover_vehicle", "reload_vehicle", "reload_all_vehicles", "parts_selector", "dropPlayerAtCamera", "nodegrabberRender",'reset_physics','switch_previous_vehicle','switch_next_vehicle'}
+local blockedInputActions = {'slower_motion','faster_motion','toggle_slow_motion','modify_vehicle','vehicle_selector','saveHome','loadHome', 'reset_all_physics','toggleTraffic', "recover_vehicle", "recover_vehicle_alt", "recover_to_last_road", "reload_vehicle", "reload_all_vehicles", "parts_selector", "dropPlayerAtCamera", "nodegrabberRender",'reset_physics','switch_previous_vehicle','switch_next_vehicle'} --"dropPlayerAtCameraNoReset", missing. This allows for resets with f7, this should be done with a sort of timer on reset or only alow rewinds. This seems to not be possible
 
 local colors = {["Red"] = {255,50,50,255},["LightBlue"] = {50,50,160,255},["Green"] = {50,255,50,255},["Yellow"] = {200,200,25,255},["Purple"] = {150,50,195,255}}
 local thisAreaData = {}
 local thisLevelData = {}
-local mapData = {}
+local mapData = {} --TODO: this should be a txt file for easily adding areas
 mapData.levels = ""
 
 --Industrial level data:
@@ -175,6 +175,39 @@ local obstaclesPrefabPath
 local obstaclesPrefabName
 local obstaclesPrefabObj
 
+local flagMarker = {}
+flagMarker.x = 0
+flagMarker.y = 0
+flagMarker.arrowAngle = 0
+flagMarker.showArrow = false
+flagMarker.showHeightArrow = false
+flagMarker.showIcon = false
+flagMarker.abovePlayer = false
+
+local goalMarker = {}
+goalMarker.x = 140
+goalMarker.y = 0
+goalMarker.arrowAngle = 0
+goalMarker.showArrow = false
+goalMarker.showHeightArrow = false
+goalMarker.showIcon = false
+goalMarker.abovePlayer = false
+
+local uiMessages = {}
+uiMessages.showMSGYouScored = false
+uiMessages.showMSGLostTheFlag = false
+uiMessages.showMSGGotTheFlag = false
+uiMessages.showMSGFlagReset = false
+uiMessages.showMSGYouScoredEndTime = 0
+uiMessages.showMSGLostTheFlagEndTime = 0
+uiMessages.showMSGGotTheFlagEndTime = 0
+uiMessages.showMSGFlagResetEndTime = 0
+uiMessages.showForTime = 2 --2s because the timing is inconsistent, maybe I should add a onSecond function or something
+
+local screenWidth = GFXDevice.getDesktopMode().width
+local screenHeight = GFXDevice.getDesktopMode().height
+if screenHeight > 1080 then screenHeight = 1080 end --it seems ui apps are limited to 1080p
+if screenWidth > 1920 then screenWidth = 1920 end
 
 local logTag = "Transporter"
 
@@ -206,6 +239,12 @@ end
 
 local function distance(vec1, vec2)
 	return math.sqrt((vec2.x-vec1.x)^2 + (vec2.y-vec1.y)^2 + (vec2.z-vec1.z)^2)
+end
+
+local function angle2D(vec1, vec2) --in degrees, because I thought it would be less conversions
+	-- if vec1 == nil or vec2 == nil then return end
+	local angle = math.atan2( vec1.y - vec2.y, vec2.x - vec1.x)
+	return angle * (180 / math.pi)
 end
 
 function resetCarColors(data)
@@ -262,6 +301,7 @@ local function receiveTransporterGameState(data)
 			end
 		end
 	end
+
 	gamestate = data
 	be:queueAllObjectLua("if Transporter then Transporter.setTransporterGameState("..serialize(gamestate)..") end")
 end
@@ -432,10 +472,30 @@ function onGameEnd()
 	allowResets()
 end
 
+local function onLostFlag()
+	uiMessages.showMSGLostTheFlag = true
+	uiMessages.showMSGLostTheFlagEndTime = gamestate.time + uiMessages.showForTime
+end
+
+local function onGotFlag()
+	uiMessages.showMSGGotTheFlag = true
+	uiMessages.showMSGGotTheFlagEndTime = gamestate.time + uiMessages.showForTime
+end
+
+local function onFlagReset()
+	uiMessages.showMSGFlagReset = true
+	uiMessages.showMSGFlagResetEndTime = gamestate.time + uiMessages.showForTime
+end
+
+local function onScore()
+	uiMessages.showMSGYouScored = true
+	uiMessages.showMSGYouScoredEndTime = gamestate.time + uiMessages.showForTime
+end
+
 function onBeamNGTrigger(data)
 	-- log('D', logtag, "trigger data: " .. dump(data))
     if data == "null" then return end
-	if data.event ~= "enter" then return end
+	-- if data.event ~= "enter" then return end
     local trigger = data.triggerName
     if MPVehicleGE.isOwn(data.subjectID) == true then
 		if trigger == "flagTrigger" then
@@ -446,6 +506,7 @@ function onBeamNGTrigger(data)
 				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
 				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
 			end
+			onGotFlag()
 			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 		elseif trigger == "goalTrigger" then	
 			if not gamestate.allowFlagCarrierResets then
@@ -545,6 +606,30 @@ function updateTransporterGameState(data)
 	if txt ~= "" then
 		guihooks.message({txt = txt}, 1, "Transporter.time")
 	end
+	if uiMessages.showMSGFlagReset then
+		if gamestate.time >= uiMessages.showMSGFlagResetEndTime then
+		uiMessages.showMSGFlagReset = false
+		uiMessages.showMSGFlagResetEndTime = 0
+		end
+	end
+	if uiMessages.showMSGYouScored then
+		if gamestate.time >= uiMessages.showMSGYouScoredEndTime then
+		uiMessages.showMSGYouScored = false
+		uiMessages.showMSGYouScoredEndTime = 0
+		end
+	end
+	if uiMessages.showMSGGotTheFlag then
+		if gamestate.time >= uiMessages.showMSGGotTheFlagEndTime then
+		uiMessages.showMSGGotTheFlag = false
+		uiMessages.showMSGGotTheFlagEndTime = 0
+		end
+	end
+	if uiMessages.showMSGLostTheFlag then
+		if gamestate.time >= uiMessages.showMSGLostTheFlagEndTime then
+		uiMessages.showMSGLostTheFlag = false
+		uiMessages.showMSGLostTheFlagEndTime = 0
+		end
+	end
 	if gamestate.gameEnded then
 		resetCarColors()
 	end
@@ -567,9 +652,9 @@ local function sendTransporterContact(vehID,localVehID)
 end
 
 local function onVehicleSwitched(oldID,ID)
-	local curentOwnerName = MPConfig.getNickname()
+	local currentOwnerName = MPConfig.getNickname()
 	if ID and MPVehicleGE.getVehicleByGameID(ID) then
-		curentOwnerName = MPVehicleGE.getVehicleByGameID(ID).ownerName
+		currentOwnerName = MPVehicleGE.getVehicleByGameID(ID).ownerName
 	end
 end
 
@@ -678,24 +763,79 @@ end
 
 local function onPreRender(dt)
 	if MPCoreNetwork and not MPCoreNetwork.isMPSession() then return end
-	if not gamestate.gameRunning then return end
-	resetCarColors()
 
 	local currentVehID = be:getPlayerVehicleID(0)
-	local curentOwnerName = MPConfig.getNickname()
+	local currentOwnerName = MPConfig.getNickname()
 	if currentVehID and MPVehicleGE.getVehicleByGameID(currentVehID) then
-		curentOwnerName = MPVehicleGE.getVehicleByGameID(currentVehID).ownerName
+		currentOwnerName = MPVehicleGE.getVehicleByGameID(currentVehID).ownerName
 	end
+
+	if not gamestate.gameRunning or gamestate.gameEnding then 
+		local veh = be:getObjectByID(currentVehID)
+		if veh then
+			local uiData = {}
+			uiData.gameRunning = false or gamestate.gameEnding
+			uiData.showFlagArrow = false
+			uiData.showFlagIcon = false
+			uiData.showFlagHeightArrow = false
+			uiData.flagAbovePlayer = flagMarker.abovePlayer
+			uiData.flagX = -140
+			uiData.flagY = -140
+			uiData.flagAngle = flagMarker.arrowAngle
+			uiData.goalAbovePlayer = goalMarker.abovePlayer
+			uiData.showGoalArrow = false
+			uiData.showGoalHeightArrow = false
+			uiData.showGoalIcon = false
+			uiData.goalX = -140
+			uiData.goalY = -140
+			uiData.goalAngle = goalMarker.arrowAngle		
+			veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
+		end
+		return 
+	end
+	resetCarColors()
+	-- log('D', logtag, "onPreRender called")
 
 	local closestOpponent = 100000000
 
 	for k,vehicle in pairs(MPVehicleGE.getVehicles()) do
 		if gamestate.players then
 			local player = gamestate.players[vehicle.ownerName]
-			if player and curentOwnerName and vehicle then
-				nametags(curentOwnerName,player,vehicle)
+			if player and currentOwnerName and vehicle then
+				nametags(currentOwnerName,player,vehicle)
+				if player.hasFlag then
+					if core_camera.getForward() then
+						local myVeh = be:getObjectByID(currentVehID)
+						local veh = be:getObjectByID(vehicle.gameVehicleID)	
+						if myVeh and veh then 
+							local vehPos = myVeh:getPosition()
+							local flagVehPos = veh:getPosition()	
+							if flagVehPos.z > vehPos.z + 5 then 
+								flagMarker.abovePlayer = true
+								flagMarker.showHeightArrow = true 
+							elseif flagVehPos.z < vehPos.z - 5 then
+								flagMarker.abovePlayer = false
+								flagMarker.showHeightArrow = true
+							else
+								flagMarker.showHeightArrow = false
+							end
+							local camVec = core_camera.getForward()
+							local camPos = core_camera.getPosition()
+							-- log('D', logtag, "camVec: " .. dump(camVec))
+							local origin = vec3(0,0,0)
+							local camRot = angle2D(camVec, origin)
+							-- log('D', logtag, "vehRot: " .. dump(camRot))
+							flagMarker.arrowAngle = angle2D(camPos, flagVehPos)
+							flagMarker.arrowAngle = (flagMarker.arrowAngle - camRot) - 180 --apparently it is offset with 180 degrees for some reason
+							flagMarker.showArrow = true
+							flagMarker.showIcon = true
+							flagMarker.x = (screenWidth / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.cos((flagMarker.arrowAngle - 90) * (math.pi / 180))
+							flagMarker.y = (screenHeight / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.sin((flagMarker.arrowAngle - 90) * (math.pi / 180))
+						end
+					end
+				end
 				color(player,vehicle,gamestate.players[vehicle.ownerName].team,dt)
-				if gamestate.players[curentOwnerName] and currentVehID and gamestate.players[curentOwnerName].hasFlag and not gamestate.players[vehicle.ownerName].hasFlag and currentVehID ~= vehicle.gameVehicleID then
+				if gamestate.players[currentOwnerName] and currentVehID and gamestate.players[currentOwnerName].hasFlag and not gamestate.players[vehicle.ownerName].hasFlag and currentVehID ~= vehicle.gameVehicleID then
 					local myVeh = be:getObjectByID(currentVehID)
 					local veh = be:getObjectByID(vehicle.gameVehicleID)				
 					if veh and myVeh then
@@ -716,31 +856,125 @@ local function onPreRender(dt)
 			end
 		end
 	end
+	
+	if gamestate.players[currentOwnerName].hasFlag then
+		flagMarker.showArrow = false
+		flagMarker.showHeightArrow = false
+		flagMarker.showIcon = false
+	end
 
 	if flagPrefabActive and flagLocation then
 		local veh = be:getObjectByID(currentVehID)	
-		local vehPos = veh:getPosition()
-		debugDrawer:drawTextAdvanced(flagLocation, String("Flag " .. round(distance(vehPos, flagLocation), 0) .. "m"), ColorF(1,1,1,1), true, false, ColorI(50,50,200,255))
+		if veh then
+			local vehPos = veh:getPosition()
+			if flagLocation.z + 2 > vehPos.z + 5 then --apparantly the prefablocation is 2 meters off
+				flagMarker.abovePlayer = true
+				flagMarker.showHeightArrow = true 
+			elseif flagLocation.z + 2 < vehPos.z - 5 then
+				flagMarker.abovePlayer = false
+				flagMarker.showHeightArrow = true
+			else
+				flagMarker.showHeightArrow = false
+			end
+			if core_camera.getForward() then
+				local camVec = core_camera.getForward()
+				local camPos = core_camera.getPosition()
+				-- log('D', logtag, "camVec: " .. dump(camVec))
+				local origin = vec3(0,0,0)
+				local camRot = angle2D(camVec, origin)
+				-- log('D', logtag, "vehRot: " .. dump(camRot))
+				flagMarker.arrowAngle = angle2D(camPos, flagLocation)
+				flagMarker.arrowAngle = (flagMarker.arrowAngle - camRot) - 180 --apparently it is offset with 180 degrees for some reason
+				flagMarker.showArrow = true
+				flagMarker.showIcon = true
+				flagMarker.x = (screenWidth / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.cos((flagMarker.arrowAngle - 90) * (math.pi / 180)) --TODO: make this work better on higher resolutions than 1080p
+				flagMarker.y = (screenHeight / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.sin((flagMarker.arrowAngle - 90) * (math.pi / 180))
+			end
+			debugDrawer:drawTextAdvanced(flagLocation, String("Flag " .. round(distance(vehPos, flagLocation), 0) .. "m"), ColorF(1,1,1,1), true, false, ColorI(50,50,200,255))
+		end
 	end
+
 	if goalPrefabActive and goalLocation then
 		local veh = be:getObjectByID(currentVehID)	
-		local vehPos = veh:getPosition()
-		debugDrawer:drawTextAdvanced(goalLocation, String("Goal " .. round(distance(vehPos, goalLocation), 0)) .. "m", ColorF(1,1,1,1), true, false, ColorI(50,200,50,255))
+		if veh then
+			local vehPos = veh:getPosition()
+			if goalLocation.z + 2 > vehPos.z + 5 then 
+				goalMarker.abovePlayer = true
+				goalMarker.showHeightArrow = true 
+			elseif goalLocation.z + 2 < vehPos.z - 5 then
+				goalMarker.abovePlayer = false
+				goalMarker.showHeightArrow = true
+			else
+				goalMarker.showHeightArrow = false
+			end
+			if core_camera.getForward() then
+				local camVec = core_camera.getForward()
+				local camPos = core_camera.getPosition()
+				-- log('D', logtag, "camVec: " .. dump(camVec))
+				local origin = vec3(0,0,0)
+				local camRot = angle2D(camVec, origin)
+				-- log('D', logtag, "vehRot: " .. dump(camRot))
+				goalMarker.arrowAngle = angle2D(camPos, goalLocation)
+				-- goalMarker.arrowAngle = goalMarker.arrowAngle + camRot
+				goalMarker.arrowAngle = (goalMarker.arrowAngle - camRot) - 180 --apparently it is offset with 180 degrees for some reason
+				goalMarker.showIcon = true
+				goalMarker.showArrow = true
+				goalMarker.x = (screenWidth / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.cos((goalMarker.arrowAngle - 90) * (math.pi / 180)) --TODO: make this work better on higher resolutions than 1080p
+				goalMarker.y = (screenHeight / 2 - 140 / 2) + math.sqrt(((screenWidth/2) * (screenWidth/2)) + ((screenHeight/2) * (screenHeight/2))) * math.sin((goalMarker.arrowAngle - 90) * (math.pi / 180))
+			end
+			debugDrawer:drawTextAdvanced(goalLocation, String("Goal " .. round(distance(vehPos, goalLocation), 0)) .. "m", ColorF(1,1,1,1), true, false, ColorI(50,200,50,255))
+		end
+	-- else --no goal but should only be for a real small amount of time
+	-- 	goalMarker.showIcon = false
+	-- 	goalMarker.showHeightArrow = false
+	-- 	goalMarker.showArrow = false
+	-- 	-- goalMarker.x = -140
+	-- 	-- goalMarker.y = -140
 	end
 	local tempSetting = defaultRedFadeDistance
 	if gamestate.settings then
 		tempSetting = gamestate.settings.redFadeDistance
 	end
 	
-	if gamestate.settings and gamestate.settings.flagTint and gamestate.players[curentOwnerName] and gamestate.players[curentOwnerName].hasFlag then
+	if gamestate.settings and gamestate.settings.flagTint and gamestate.players[currentOwnerName] and gamestate.players[currentOwnerName].hasFlag then
 		distancecolor = math.min(0.4,1 -(closestOpponent/(tempSetting or defaultRedFadeDistance)))
-		scenetree["PostEffectCombinePassObject"]:setField("enableBlueShift", 0,distancecolor)
-		scenetree["PostEffectCombinePassObject"]:setField("blueShiftColor", 0,"1 0 0")
+		scenetree["PostEffectCombinePassObject"]:setField("enableBlueShift", 0, distancecolor)
+		scenetree["PostEffectCombinePassObject"]:setField("blueShiftColor", 0, "1 0 0")
 	end
+
+	local uiData = {}
+	-- local player = gamestate.players[vehicle.ownerName]
+	-- local veh = MPVehicleGE.getVehicleByGameID(currentVehID)	
+
+	uiData.gameRunning = true 
+	uiData.showFlagArrow = flagMarker.showArrow
+	uiData.showFlagIcon = flagMarker.showIcon
+	uiData.showFlagHeightArrow = flagMarker.showHeightArrow
+	uiData.flagAbovePlayer = flagMarker.abovePlayer
+	uiData.flagX = flagMarker.x
+	uiData.flagY = flagMarker.y
+	uiData.flagAngle = flagMarker.arrowAngle
+	uiData.goalAbovePlayer = goalMarker.abovePlayer
+	uiData.showGoalArrow = goalMarker.showArrow
+	uiData.showGoalHeightArrow = goalMarker.showHeightArrow
+	uiData.showGoalIcon = goalMarker.showIcon
+	uiData.goalX = goalMarker.x
+	uiData.goalY = goalMarker.y
+	uiData.goalAngle = goalMarker.arrowAngle
+	uiData.showMSGYouScored = uiMessages.showMSGYouScored
+	uiData.showMSGLostTheFlag = uiMessages.showMSGLostTheFlag
+	uiData.showMSGGotTheFlag = uiMessages.showMSGGotTheFlag
+	uiData.showMSGFlagReset = uiMessages.showMSGFlagReset
+
+	local veh = be:getObjectByID(currentVehID)
+	if veh then
+		veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
+	end
+	log('D', logtag, "Resolution: " .. screenWidth .. "x" .. screenHeight)
 end
 
 local function onResetGameplay(id)
-	log('D', logtag, "onResetGameplay called")
+	-- log('D', logtag, "onResetGameplay called")
 end
 
 local function onExtensionUnloaded()
@@ -767,6 +1001,10 @@ if MPGameNetwork then AddEventHandler("sendTransporterContact", sendTransporterC
 if MPGameNetwork then AddEventHandler("allowResets", allowResets) end
 if MPGameNetwork then AddEventHandler("disallowResets", disallowResets) end
 if MPGameNetwork then AddEventHandler("onGameEnd", onGameEnd) end
+if MPGameNetwork then AddEventHandler("onGotFlag", onGotFlag) end
+if MPGameNetwork then AddEventHandler("onLostFlag", onLostFlag) end
+if MPGameNetwork then AddEventHandler("onFlagReset", onFlagReset) end
+if MPGameNetwork then AddEventHandler("onScore", onScore) end
 -- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
 -- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
 
@@ -794,6 +1032,9 @@ M.onResetGameplay = onResetGameplay
 M.onGameEnd = onGameEnd
 M.allowResets = allowResets
 M.disallowResets = disallowResets
+M.onLostFlag = onLostFlag
+M.onGotFlag = onGotFlag
+M.onScore = onScore
 -- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger

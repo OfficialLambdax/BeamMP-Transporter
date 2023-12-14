@@ -1,3 +1,0 @@
-{"name":"flagTrigger","class":"BeamNGTrigger","persistentId":"47251fd3-c375-4cb2-96d4-7049353795ea","__parent":"flag6_group","position":[-331.20694,-73.5945892,41.718],"scale":[1,1,10],"triggerTestType":"Bounding box","triggerType":"Sphere"}
-{"name":"flag6_group","class":"SimGroup","persistentId":"aced4cc0-d073-474e-8ae2-93137dcb3647","groupPosition":"-331.20693969727 -73.594589233398 30.739435195923"}
-{"name":"flag6TSStatic","class":"TSStatic","persistentId":"00c042d9-43ea-4d5e-be6a-cb2c65a000ac","__parent":"flag6_group","position":[-331.20694,-73.5945892,30.7394352],"instanceColor":[1,0.600000024,0,1],"isRenderEnabled":false,"scale":[10,10,3],"shapeName":"/art/shapes/interface/single_faded_column.dae","useInstanceRenderData":true}

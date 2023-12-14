@@ -241,12 +241,14 @@ function setLevelName(playerID, name)
 end
 
 local function onAreaChange()	
+	local foundArea = false
 	for key,areaName in pairs(areaNames) do
 		if areaName == requestedArea then
 			area = areaName
+			foundArea = true
 		end
 	end
-	if area == "" then
+	if area == "" or not foundArea then
 		if areaNames[1] then
 			area = areaNames[1]
 			MP.SendChatMessage(-1, "The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
@@ -609,6 +611,7 @@ local function resetFlagCarrier(player)
 				MP.TriggerClientEvent(player.playerID, "allowResets", "nil")
 			end
 			spawnFlag()
+			MP.TriggerClientEvent(-1, "onFlagReset", "nil")
 			return
 		end
 	end
@@ -639,8 +642,8 @@ local function onPlayerJoining(player)
 end
 
 --called whenever a player has fully joined the session
-local function onPlayerJoin(player)	
-	MP.TriggerClientEvent(-1, "requestLevelName", "nil")
+local function onPlayerJoin(player)
+	MP.TriggerClientEvent(-1, "requestLevelName", "nil") --TODO: fix this when changing levels somehow
 	MP.TriggerClientEvent(-1, "requestAreaNames", "nil")
 	MP.TriggerClientEvent(-1, "requestLevels", "nil")
 end
@@ -716,15 +719,20 @@ function onTransporterContact(localPlayerID, data)
 			if localPlayer.hasFlag == true and remotePlayer.hasFlag == false then
 				gameState.players[localPlayerName].hasFlag = false
 				gameState.players[remotePlayerName].hasFlag = true
-				MP.TriggerClientEvent(localPlayerID, "allowResets", "nil")
-				MP.TriggerClientEvent(remotePlayerID, "disallowResets", "nil")
+				MP.TriggerClientEvent(localPlayerID, "allowResets", "nil") --lost flag
+				MP.TriggerClientEvent(localPlayerID, "onLostFlag", "nil")
+				MP.TriggerClientEvent(remotePlayerID, "disallowResets", "nil") --got flag
+				MP.TriggerClientEvent(remotePlayerID, "onGotFlag", "nil")
+				
 				gameState.players[remotePlayerName].remoteContact = false
 				MP.SendChatMessage(-1, "".. remotePlayerName .." has captured the flag!")
 			elseif remotePlayer.hasFlag == true and localPlayer.hasFlag == false then
 				gameState.players[localPlayerName].hasFlag = true
 				gameState.players[remotePlayerName].hasFlag = false
-				MP.TriggerClientEvent(localPlayerID, "disallowResets", "nil")
-				MP.TriggerClientEvent(remotePlayerID, "allowResets", "nil")
+				MP.TriggerClientEvent(localPlayerID, "disallowResets", "nil") --got flag
+				MP.TriggerClientEvent(localPlayerID, "onGotFlag", "nil")
+				MP.TriggerClientEvent(remotePlayerID, "allowResets", "nil") --lost flag
+				MP.TriggerClientEvent(remotePlayerID, "onLostFlag", "nil")
 				gameState.players[localPlayerName].localContact = false
 				MP.SendChatMessage(-1, "".. localPlayerName .." has captured the flag!")
 			end
@@ -750,6 +758,7 @@ function onGoal(playerID)
 		gameState.players[MP.GetPlayerName(playerID)].score = gameState.players[MP.GetPlayerName(playerID)].score + 1
 		gameState.players[MP.GetPlayerName(playerID)].hasFlag = false
 		MP.TriggerClientEvent(-1, "removePrefabs", "goal")
+		MP.TriggerClientEvent(playerID, "onScore", "nil")
 		updateClients()
 		MP.SendChatMessage(-1,"".. MP.GetPlayerName(playerID) .." Scored a point!")
 		spawnFlagAndGoal()
@@ -757,9 +766,10 @@ function onGoal(playerID)
 end
 
 function setAreaNames(playerID, data)
-	areaNames = {}
+	areaNames = {} 
+	CElog("Available areas: " .. data)
 	for name in data:gmatch("%S+") do 
-		table.insert(areaNames, name) 
+		table.insert(areaNames, name)
 	end
 	onAreaChange()
 end
