@@ -9,8 +9,8 @@ Installation:
   Download the latest release and copy the server and client folders into your server's Resources/ folder
 
 Usage:
-  go to the release page and download the latest version, then unpack the zip into the server recourses and it should be good to go,
-  then type "/transporter help" or "/ctf help" in chat to get a list of all the commands. To start a game you can type /ctf start.
+  Type "/transporter help" or "/ctf help" in chat to get a list of all the commands. To start a game you can type /ctf start.
+  This adds flag & goal markers and message boxes for when you get the flag. 
 
 Thanks to Olrosse for laying most of the foundation in this project with his Infection gamemode.
 
