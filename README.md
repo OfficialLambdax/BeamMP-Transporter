@@ -10,7 +10,6 @@ Installation:
 
 Usage:
   Type "/transporter help" or "/ctf help" in chat to get a list of all the commands. To start a game you can type /ctf start.
-  Make sure to add the Transporter UI app to your game, it should start at maximum size.
   This adds flag & goal markers and message boxes for when you get the flag. 
 
 Thanks to Olrosse for laying most of the foundation in this project with his Infection gamemode.
