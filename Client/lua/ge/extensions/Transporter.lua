@@ -151,6 +151,16 @@ thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name
 mapData[thisLevelData.name] = thisLevelData
 mapData.levels = mapData.levels .. " " .. thisLevelData.name
 
+--Foundry area data:
+thisAreaData = {}
+thisAreaData.name = "Foundry"
+thisAreaData.flagcount = "6"
+thisAreaData.goalcount = "6"
+thisLevelData.levelData[thisAreaData.name] = thisAreaData
+thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name 
+mapData[thisLevelData.name] = thisLevelData
+mapData.levels = mapData.levels .. " " .. thisLevelData.name
+
 local currentArea = ""
 local currentLevel = ""
 local lastCreatedFlagID = 1
@@ -469,6 +479,7 @@ local function removePrefabs(type)
 end
 
 function onGameEnd()
+	core_gamestate.setGameState('multiplayer', 'multiplayer', 'multilpayer')
 	allowResets()
 end
 
@@ -593,6 +604,9 @@ function updateTransporterGameState(data)
 	-- end
 
 	local txt = ""
+	if time and time == 0 then
+		core_gamestate.setGameState('transporter', 'transporter', 'transporter')
+	end
 
 	if time and time < 0 then
 		txt = "Game starts in "..math.abs(time).." seconds"
@@ -970,7 +984,7 @@ local function onPreRender(dt)
 	if veh then
 		veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
 	end
-	log('D', logtag, "Resolution: " .. screenWidth .. "x" .. screenHeight)
+	-- log('D', logtag, "Resolution: " .. screenWidth .. "x" .. screenHeight)
 end
 
 local function onResetGameplay(id)
