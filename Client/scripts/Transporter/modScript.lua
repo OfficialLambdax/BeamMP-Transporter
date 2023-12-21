@@ -1,3 +1,2 @@
-queueExtensionToLoad("Transporter")
--- queueExtensionToLoad("transporter")
--- queueExtensionToLoad("TransporterContactDetection")
+load("Transporter")
+setExtensionUnloadMode("Transporter", 'manual')
