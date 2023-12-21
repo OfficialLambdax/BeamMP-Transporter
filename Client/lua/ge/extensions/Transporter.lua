@@ -548,7 +548,7 @@ end
 
 local function requestAreaNames()
 	local levelName = core_levels.getLevelName(getMissionFilename())
-	if TriggerServerEvent then TriggerServerEvent("setAreaNames", mapData[levelName].areas) end
+	if TriggerServerEvent and mapData[levelName] then TriggerServerEvent("setAreaNames", mapData[levelName].areas) end
 end
 
 local function requestLevels()

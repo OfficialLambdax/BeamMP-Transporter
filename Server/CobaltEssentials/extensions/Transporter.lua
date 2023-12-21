@@ -266,6 +266,14 @@ local function teamAlreadyChosen(team)
 end
 
 local function gameSetup()
+	local levelAvailable = false
+	for i, level in pairs(levels) do
+		if level == levelName then levelAvailable = true end
+	end
+	if not levelAvailable then 
+		MP.SendChatMessage(-1, "Transporter is not available on this map.")
+		return 
+	end
 	math.randomseed(os.time())
 	onAreaChange()
 	for k,v in pairs(possibleTeams) do
