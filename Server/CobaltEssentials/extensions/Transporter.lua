@@ -251,7 +251,8 @@ local function onAreaChange()
 	if area == "" or not foundArea then
 		if areaNames[1] then
 			area = areaNames[1]
-			MP.SendChatMessage(-1, "The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
+			-- MP.SendChatMessage(-1, "The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
+			CElog("The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
 		else
 			MP.SendChatMessage(-1, "Could not find an area to play on, on the map " .. levelName)
 		end
