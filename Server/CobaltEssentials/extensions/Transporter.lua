@@ -23,6 +23,8 @@ local teamSize = 1
 local possibleTeams = {"Red", "LightBlue", "Green", "Yellow", "Purple"}
 local chosenTeams = {}
 local lastCollision = {"", ""}
+local autoStartTimer = 0
+local autoStart = false
 
 gameState.flagExists = false
 gameState.gameRunning = false
@@ -192,7 +194,7 @@ end
 local function updateClients()
 	local tempTable = {}
 	compareTable(gameState,tempTable,laststate)
-	CElog("updateClients: " .. dump(tempTable))
+	-- CElog("updateClients: " .. dump(tempTable))
 
 	if tempTable and next(tempTable) ~= nil then
 		MP.TriggerClientEventJson(-1, "updateTransporterGameState", tempTable)
@@ -356,9 +358,8 @@ local function gameSetup()
 	MP.TriggerClientEventJson(-1, "receiveTransporterGameState", gameState)
 end
 
-local function gameEnd(reason)
+local function transporterGameEnd(reason)
     MP.TriggerClientEvent(-1, "removePrefabs", "all")
-    MP.TriggerClientEvent(-1, "onGameEnd", "nil")
 	gameState.gameEnding = true
 	if reason == nil or reason == "nil" then
 		MP.SendChatMessage(-1,"Game stopped for uknown reason")
@@ -375,6 +376,8 @@ local function gameEnd(reason)
 	end
 
 	MP.SendChatMessage(-1,"The scores this round are: ")
+	local highestScore = 0
+	local winningTeam = ""
 	if teams and chosenTeams then
 		for teamName, teamData in pairs(chosenTeams) do
 			if chosenTeams[teamName].chosen then
@@ -385,12 +388,39 @@ local function gameEnd(reason)
 						chosenTeams[teamName].score = chosenTeams[teamName].score + player.score
 					end
 				end
+				if chosenTeams[teamName].score > highestScore then
+					highestScore = chosenTeams[teamName].score
+					winningTeam = teamName
+				end
 				MP.SendChatMessage(-1, "" .. teamName .. ": " .. chosenTeams[teamName].score)
 			end
 		end
 	else
 		for playername,player in pairs(gameState.players) do
+			if player.score > highestScore then
+				highestScore = player.score
+			end
 			MP.SendChatMessage(-1, "" .. playername .. ": " .. player.score)
+		end
+	end
+	if teams and chosenTeams then
+		MP.SendChatMessage(-1, "Team " .. winningTeam .. " Won!")
+		for playername,player in pairs(gameState.players) do
+			if player.team == winningTeam then
+				MP.TriggerClientEvent(player.ID, "onWin", "nil")
+			else
+				MP.TriggerClientEvent(player.ID, "onLose", "nil")
+			end
+		end
+	else
+		for playername,player in pairs(gameState.players) do
+			if player.score == highestScore then
+				MP.SendChatMessage(-1, "" .. playername .. " Won!")
+				CElog("" .. dump(player))
+				MP.TriggerClientEvent(player.ID, "onWin", "nil")
+			else
+				MP.TriggerClientEvent(player.ID, "onLose", "nil")
+			end
 		end
 	end
 end
@@ -502,7 +532,7 @@ function transporter(player, argument)
 		onAreaChange()
 		MP.SendChatMessage(-1, "Requested area: " .. requestedArea)
 	elseif argument == "stop" then
-		gameEnd("manual")
+		transporterGameEnd("manual")
 		MP.SendChatMessage(-1, "Transporter stopping...")
 	end	
 end
@@ -546,7 +576,7 @@ local function gameRunningLoop()
 	end
 
 	if not gameState.gameEnding and gameState.time == gameState.roundLength then
-		gameEnd("time")
+		transporterGameEnd("time")
 		gameState.endtime = gameState.time + 10
 	elseif gameState.gameEnding and gameState.time == gameState.endtime then
 		gameState.gameRunning = false
@@ -555,10 +585,11 @@ local function gameRunningLoop()
 		gameState.gameRunning = false
 		gameState.gameEnding = false
 		gameState.gameEnded = true
+		MP.TriggerClientEvent(-1, "onGameEnd", "nil")
 	elseif not gameState.gameEnding and gameState.scoreLimit and gameState.scoreLimit ~= 0 then
 		for playerName,player in pairs(gameState.players) do
 			if player.score >= gameState.scoreLimit then
-				gameEnd("score")
+				transporterGameEnd("score")
 				MP.SendChatMessage(-1, "Score limit was reached, " .. playerName .. " is the winner")
 			end
 		end

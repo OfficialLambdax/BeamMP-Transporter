@@ -28,9 +28,9 @@
         {
             "label": "Compress Release",
             "type": "shell",
-            "command": "zip -r ../BeamMP-Transporter.zip Resources",
+            "command": "zip -r Client/TransporterGamemode.zip ../Client && zip -r BeamMP-Transporter.zip Client ../Server",
             "windows": {
-                "command": "7z a -tzip ../BeamMP-Transporter.zip Resources -aoa -r"
+                "command": "7z a -tzip Client/TransporterGamemode.zip ../Client -aoa -r ; 7z a -tzip BeamMP-Transporter.zip Client ../Server -aoa -r"
             },
             "options": {
                 "cwd": "export"

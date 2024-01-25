@@ -208,10 +208,14 @@ uiMessages.showMSGYouScored = false
 uiMessages.showMSGLostTheFlag = false
 uiMessages.showMSGGotTheFlag = false
 uiMessages.showMSGFlagReset = false
+uiMessages.showMSGYouWin = false
+uiMessages.showMSGYouLose = false
 uiMessages.showMSGYouScoredEndTime = 0
 uiMessages.showMSGLostTheFlagEndTime = 0
 uiMessages.showMSGGotTheFlagEndTime = 0
 uiMessages.showMSGFlagResetEndTime = 0
+uiMessages.showMSGYouWinEndTime = 0
+uiMessages.showMSGYouLoseEndTime = 0
 uiMessages.showForTime = 2 --2s because the timing is inconsistent, maybe I should add a onSecond function or something
 
 local screenWidth = GFXDevice.getDesktopMode().width
@@ -479,7 +483,7 @@ local function removePrefabs(type)
 end
 
 function onGameEnd()
-	core_gamestate.setGameState('multiplayer', 'multiplayer', 'multilpayer')
+	core_gamestate.setGameState('multiplayer', 'multiplayer', 'multilpayer') --reset the app layout
 	allowResets()
 end
 
@@ -501,6 +505,18 @@ end
 local function onScore()
 	uiMessages.showMSGYouScored = true
 	uiMessages.showMSGYouScoredEndTime = gamestate.time + uiMessages.showForTime
+end
+
+local function onWin()
+	uiMessages.showMSGYouWin = true
+	uiMessages.showMSGYouWinEndTime = gamestate.time + uiMessages.showForTime
+	-- log('D', logtag, "onWin called")
+end
+
+local function onLose()
+	uiMessages.showMSGYouLose = true
+	uiMessages.showMSGYouLoseEndTime = gamestate.time + uiMessages.showForTime
+	-- log('D', logtag, "onLose called" .. gamestate.time .. " " .. uiMessages.showMSGYouLoseEndTime)
 end
 
 function onBeamNGTrigger(data)
@@ -642,6 +658,18 @@ function updateTransporterGameState(data)
 		if gamestate.time >= uiMessages.showMSGLostTheFlagEndTime then
 		uiMessages.showMSGLostTheFlag = false
 		uiMessages.showMSGLostTheFlagEndTime = 0
+		end
+	end
+	if uiMessages.showMSGYouWin then
+		if time >= uiMessages.showMSGYouWinEndTime then
+		uiMessages.showMSGYouWin = false
+		uiMessages.showMSGYouWinEndTime = 0
+		end
+	end
+	if uiMessages.showMSGYouLose then
+		if time >= uiMessages.showMSGYouLoseEndTime then
+		uiMessages.showMSGYouLose = false
+		uiMessages.showMSGYouLoseEndTime = 0
 		end
 	end
 	if gamestate.gameEnded then
@@ -802,7 +830,9 @@ local function onPreRender(dt)
 			uiData.showGoalIcon = false
 			uiData.goalX = -140
 			uiData.goalY = -140
-			uiData.goalAngle = goalMarker.arrowAngle		
+			uiData.goalAngle = goalMarker.arrowAngle
+			uiData.showMSGYouWin = uiMessages.showMSGYouWin	
+			uiData.showMSGYouLose = uiMessages.showMSGYouLose		
 			veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
 		end
 		return 
@@ -979,6 +1009,8 @@ local function onPreRender(dt)
 	uiData.showMSGLostTheFlag = uiMessages.showMSGLostTheFlag
 	uiData.showMSGGotTheFlag = uiMessages.showMSGGotTheFlag
 	uiData.showMSGFlagReset = uiMessages.showMSGFlagReset
+	uiData.showMSGYouWin = uiMessages.showMSGYouWin
+	uiData.showMSGYouLose = uiMessages.showMSGYouLose
 
 	local veh = be:getObjectByID(currentVehID)
 	if veh then
@@ -1019,6 +1051,9 @@ if MPGameNetwork then AddEventHandler("onGotFlag", onGotFlag) end
 if MPGameNetwork then AddEventHandler("onLostFlag", onLostFlag) end
 if MPGameNetwork then AddEventHandler("onFlagReset", onFlagReset) end
 if MPGameNetwork then AddEventHandler("onScore", onScore) end
+if MPGameNetwork then AddEventHandler("onWin", onWin) end
+if MPGameNetwork then AddEventHandler("onLose", onLose) end
+
 -- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
 -- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
 
@@ -1049,6 +1084,8 @@ M.disallowResets = disallowResets
 M.onLostFlag = onLostFlag
 M.onGotFlag = onGotFlag
 M.onScore = onScore
+M.onWin = onWin
+M.onLose = onLose
 -- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger

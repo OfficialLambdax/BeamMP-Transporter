@@ -1,4 +1,0 @@
-{"class":"ParticleEmitterNode","persistentId":"07a48bea-ebf9-4f1f-9d48-69040ddfcd35","__parent":"burners_particles","position":[-20.3369541,80.3802185,45.2394333],"dataBlock":"lightExampleEmitterNodeData1","emitter":"BNGP_26"}
-{"class":"ParticleEmitterNode","persistentId":"dc8fea91-00a8-4a8e-b63d-0005a829d27d","__parent":"burners_particles","position":[-176.585815,-111.279831,48.2905006],"dataBlock":"lightExampleEmitterNodeData1","emitter":"BNGP_26"}
-{"class":"ParticleEmitterNode","persistentId":"f20dc888-59dd-400d-be0e-390ff1ff3f2c","__parent":"burners_particles","position":[-14.5897179,84.7207336,45.2394333],"dataBlock":"lightExampleEmitterNodeData1","emitter":"BNGP_26"}
-{"class":"ParticleEmitterNode","persistentId":"f3d68776-d5f5-48e1-bf6a-9f19ce76a7c1","__parent":"burners_particles","position":[121.220627,87.3954086,45.450325],"dataBlock":"lightExampleEmitterNodeData1","emitter":"BNGP_26"}

@@ -32,6 +32,12 @@ angular.module('beamng.apps')
 					'<div id="MSGFlagReset" style="position:absolute; marginTop:-70; marginLeft:-440">' +
 						'<img src="/ui/modules/apps/Transporter/MSGFlagReset.png" alt="message">' + 
 					'</div>' + 
+					'<div id="MSGYouWin" style="position:absolute; marginTop:-70; marginLeft:-440">' +
+						'<img src="/ui/modules/apps/Transporter/MSGYouWin.png" alt="message">' + 
+					'</div>' + 
+					'<div id="MSGYouLose" style="position:absolute; marginTop:-70; marginLeft:-440">' +
+						'<img src="/ui/modules/apps/Transporter/MSGYouLose.png" alt="message">' + 
+					'</div>' + 
 				  '</div>',
 				
 		replace: true,
@@ -54,6 +60,8 @@ angular.module('beamng.apps')
 		const MSGLostTheFlag = document.getElementById("MSGLostTheFlag");
 		const MSGGotTheFlag = document.getElementById("MSGGotTheFlag");
 		const MSGFlagReset = document.getElementById("MSGFlagReset");
+		const MSGYouWin = document.getElementById("MSGYouWin");
+		const MSGYouLose = document.getElementById("MSGYouLose");
 		flagArrow.style.marginTop = -140 + 'px'; 
 		flagArrow.style.marginLeft = -140 + 'px';
 		flagIcon.style.marginTop = -140 + 'px'; 
@@ -74,6 +82,10 @@ angular.module('beamng.apps')
 		MSGGotTheFlag.style.marginLeft = -440 + 'px';
 		MSGFlagReset.style.marginTop = -70 + 'px';
 		MSGFlagReset.style.marginLeft = -440 + 'px';
+		MSGYouWin.style.marginTop = -70 + 'px';
+		MSGYouWin.style.marginLeft = -440 + 'px';
+		MSGYouLose.style.marginTop = -70 + 'px';
+		MSGYouLose.style.marginLeft = -440 + 'px';
 	});
 	// var c = element[0], ctx = c.getContext('2d')
 	scope.$on('streamsUpdate', function (event, streams) {
@@ -95,6 +107,8 @@ angular.module('beamng.apps')
 		const MSGLostTheFlag = document.getElementById("MSGLostTheFlag");
 		const MSGGotTheFlag = document.getElementById("MSGGotTheFlag");
 		const MSGFlagReset = document.getElementById("MSGFlagReset");
+		const MSGYouWin = document.getElementById("MSGYouWin");
+		const MSGYouLose = document.getElementById("MSGYouLose");
 		const screenWidth = window.screen.availWidth;
 		const screenHeight = window.screen.availHeight - 84; //84 pixels for bottom and top ui, TODO: gotta check if this works on other resolutions to
 		// console.log(screenWidth);
@@ -137,6 +151,20 @@ angular.module('beamng.apps')
 				} else {
 					MSGFlagReset.style.marginTop = -70 + 'px';
 					MSGFlagReset.style.marginLeft = -440 + 'px';
+				}
+				if (Transporter.showMSGYouWin == true) {
+					MSGYouWin.style.marginTop = (screenHeight / 2) - (70 / 2) + 'px';
+					MSGYouWin.style.marginLeft = (screenWidth / 2) - (420 / 2) + 'px';
+				} else {
+					MSGYouWin.style.marginTop = -70 + 'px';
+					MSGYouWin.style.marginLeft = -440 + 'px';
+				}
+				if (Transporter.showMSGYouLose == true) {
+					MSGYouLose.style.marginTop = (screenHeight / 2) - (70 / 2) + 'px';
+					MSGYouLose.style.marginLeft = (screenWidth / 2) - (420 / 2) + 'px';
+				} else {
+					MSGYouLose.style.marginTop = -70 + 'px';
+					MSGYouLose.style.marginLeft = -440 + 'px';
 				}
 				if (Transporter.showFlagArrow == true) {
 					flagArrow.style.transform = "rotate(" + Transporter.flagAngle + "deg)";
@@ -224,6 +252,10 @@ angular.module('beamng.apps')
 				MSGGotTheFlag.style.marginLeft = -440 + 'px';
 				MSGFlagReset.style.marginTop = -70 + 'px';
 				MSGFlagReset.style.marginLeft = -440 + 'px';
+				MSGYouWin.style.marginTop = -70 + 'px';
+				MSGYouWin.style.marginLeft = -440 + 'px';
+				MSGYouLose.style.marginTop = -70 + 'px';
+				MSGYouLose.style.marginLeft = -440 + 'px';
 			}
 		} else { //empty stream got sent so yeet the divs of the screen
 			flagArrow.style.marginTop = -140 + 'px'; 
@@ -246,6 +278,10 @@ angular.module('beamng.apps')
 			MSGGotTheFlag.style.marginLeft = -440 + 'px';
 			MSGFlagReset.style.marginTop = -70 + 'px';
 			MSGFlagReset.style.marginLeft = -440 + 'px';
+			MSGYouWin.style.marginTop = -70 + 'px';
+			MSGYouWin.style.marginLeft = -440 + 'px';
+			MSGYouLose.style.marginTop = -70 + 'px';
+			MSGYouLose.style.marginLeft = -440 + 'px';
 		}		
 	});
 	
