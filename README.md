@@ -9,8 +9,8 @@ Installation:
   Download the latest release and copy the server and client folders into your server's Resources/ folder
 
 Usage:
-  Type "/transporter help" or "/ctf help" in chat to get a list of all the commands. To start a game you can type /ctf start.
-  This adds flag & goal markers and message boxes for when you get the flag. 
+  Type `/transporter help` or `/ctf help` in chat to get a list of all the commands. To start a game you can type `/ctf start`.
+  Available levels are shown with `/ctf list levels` and available areas with `/ctf list areas`. To change arena type `/ctf area areaName`, where areaName is the name of any area shown with the list command.
 
 Thanks to Olrosse for laying most of the foundation in this project with his Infection gamemode.
 
