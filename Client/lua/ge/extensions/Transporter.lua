@@ -519,6 +519,32 @@ local function onLose()
 	-- log('D', logtag, "onLose called" .. gamestate.time .. " " .. uiMessages.showMSGYouLoseEndTime)
 end
 
+local function dropPlayerAtCameraNoReset()
+	--COPY OF GAMES SCRIPT FOR F7:
+	local playerVehicle = be:getPlayerVehicle(0)
+	if not playerVehicle then return end
+	local pos = core_camera.getPosition()
+	local camDir = core_camera.getForward()
+	camDir.z = 0
+	local camRot = quatFromDir(camDir, vec3(0,0,1))
+	camRot = quat(0, 0, 1, 0) * camRot -- vehicles' forward is inverted
+  
+	local vehRot = quat(playerVehicle:getClusterRotationSlow(playerVehicle:getRefNodeId()))
+	local diffRot = vehRot:inversed() * camRot
+	playerVehicle:setClusterPosRelRot(playerVehicle:getRefNodeId(), pos.x, pos.y, pos.z, diffRot.x, diffRot.y, diffRot.z, diffRot.w)
+	playerVehicle:applyClusterVelocityScaleAdd(playerVehicle:getRefNodeId(), 0, 0, 0, 0)
+	core_camera.setGlobalCameraByName(nil) --this line has changed to avoid unknown function
+	if core_camera.getActiveCamName(0) == "bigMap" then
+	  core_camera.setByName(0, "orbit", false)
+	end
+	core_camera.resetCamera(0)
+	playerVehicle:setOriginalTransform(pos.x, pos.y, pos.z, camRot.x, camRot.y, camRot.z, camRot.w)
+	--Reset flag carrier on f7:
+	local data = jsonEncode(gamestate.players[MPConfig.getNickname()])
+	if TriggerServerEvent then TriggerServerEvent("resetFlagCarrier", data) end
+	-- log('D', logtag, "dropPlayerAtCameraNoReset called " .. MPConfig.getNickname() .. " " .. dump(gamestate.players))
+end
+
 function onBeamNGTrigger(data)
 	-- log('D', logtag, "trigger data: " .. dump(data))
     if data == "null" then return end
@@ -527,18 +553,15 @@ function onBeamNGTrigger(data)
     if MPVehicleGE.isOwn(data.subjectID) == true then
 		if trigger == "flagTrigger" then
 			if not gamestate.allowFlagCarrierResets then
-				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
-				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', true)
+				disallowResets()
 			else
-				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
-				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+				allowResets()
 			end
 			onGotFlag()
 			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 		elseif trigger == "goalTrigger" then	
 			if not gamestate.allowFlagCarrierResets then
-				extensions.core_input_actionFilter.setGroup('CTF_Blocked_Inputs', blockedInputActions)
-				extensions.core_input_actionFilter.addAction(0, 'CTF_Blocked_Inputs', false)
+				allowResets()
 			end
 			if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
 		end
@@ -1090,5 +1113,6 @@ M.onLose = onLose
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger
 M.onBeamNGTrigger = onBeamNGTrigger
+commands.dropPlayerAtCameraNoReset = dropPlayerAtCameraNoReset
 
 return M

@@ -602,6 +602,25 @@ local function gameRunningLoop()
 	updateClients()
 end
 
+--resets flagcarrier and spawns a new flag
+function resetFlagCarrier(localPlayerID, player) 
+	-- CElog("resetFlagCarrier: " .. dump(player) .. " " .. localPlayerID)
+	player = Util.JsonDecode(player)
+	-- CElog("resetFlagCarrier: " .. dump(player) .. " Gamestate: " .. dump(gameState))
+	if gameState.gameRunning and not gameState.gameEnding then
+		if player.hasFlag == true then
+			gameState.players[MP.GetPlayerName(localPlayerID)].hasFlag = false
+			if not gameState.allowFlagCarrierResets then --whenever the flag switches places the previous flag carrier should be able to reset again
+				MP.TriggerClientEvent(player.ID, "allowResets", "nil")
+			end
+			spawnFlag()
+			MP.TriggerClientEvent(-1, "onFlagReset", "nil")
+			CElog("Called onFlagReset")
+			return
+		end
+	end
+end
+
 function transporterTimer()
 	if gameState.gameRunning then
 		gameRunningLoop()
@@ -635,27 +654,13 @@ local function onInit(stateData)
 	MP.RegisterEvent("setLevels", "setLevels")
 	MP.RegisterEvent("setFlagCount", "setFlagCount")
 	MP.RegisterEvent("setGoalCount", "setGoalCount")
+	MP.RegisterEvent("resetFlagCarrier", "resetFlagCarrier")
 	MP.RegisterEvent("onTransporterContactreceive","onTransporterContact")
 
 	applyStuff(commands, TransporterCommands)
 	CElog("onInit done" .. dump(gameState))
 end
 
---resets flagcarrier and spawns a new flag
-local function resetFlagCarrier(player) 
-	-- CElog("" .. dump(player))
-	if gameState.gameRunning and not gameState.gameEnding and player and player.name and gameState.players[player.name].hasFlag then
-		if gameState.players[player.name].hasFlag then
-			gameState.players[player.name].hasFlag = false
-			if not gameState.allowFlagCarrierResets then --whenever the flag switches places the previous flag carrier should be able to reset again
-				MP.TriggerClientEvent(player.playerID, "allowResets", "nil")
-			end
-			spawnFlag()
-			MP.TriggerClientEvent(-1, "onFlagReset", "nil")
-			return
-		end
-	end
-end
 
 local function onUnload()
 
@@ -711,7 +716,7 @@ end
 --called whenever a player resets their vehicle, holding insert spams this function.
 local function onVehicleReset(player, vehID, data)
 	if gameState.allowFlagCarrierResets then return end
-	resetFlagCarrier(player)
+	resetFlagCarrier(nil, gameState.players[player.name])
 end
 
 --called whenever a vehicle is deleted
@@ -862,6 +867,7 @@ M.setAreaNames = setAreaNames
 M.setLevels = setLevels
 M.setFlagCount = setFlagCount
 M.setGoalCount = setGoalCount
+M.resetFlagCarrier = resetFlagCarrier
 
 M.setLevelName = setLevelName
 
