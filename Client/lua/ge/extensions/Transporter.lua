@@ -552,13 +552,15 @@ function onBeamNGTrigger(data)
     local trigger = data.triggerName
     if MPVehicleGE.isOwn(data.subjectID) == true then
 		if trigger == "flagTrigger" then
-			if not gamestate.allowFlagCarrierResets then
-				disallowResets()
-			else
-				allowResets()
+			if not gamestate.players[MPVehicleGE.getNicknameMap()[data.subjectID]].fade then
+				if not gamestate.allowFlagCarrierResets then
+					disallowResets()
+				else
+					allowResets()
+				end
+				onGotFlag()
+				if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 			end
-			onGotFlag()
-			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 		elseif trigger == "goalTrigger" then	
 			if not gamestate.players[MPVehicleGE.getNicknameMap()[data.subjectID]].fade then
 				if not gamestate.allowFlagCarrierResets then
