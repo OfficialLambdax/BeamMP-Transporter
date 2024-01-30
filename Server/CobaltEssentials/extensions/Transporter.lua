@@ -816,6 +816,11 @@ function onTransporterContact(localPlayerID, data)
 				MP.TriggerClientEvent(localPlayerID, "onLostFlag", "nil")
 				MP.TriggerClientEvent(remotePlayerID, "disallowResets", "nil") --got flag
 				MP.TriggerClientEvent(remotePlayerID, "onGotFlag", "nil")
+				if ghosts then
+					MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[remotePlayerName].vehID)
+					gameState.players[remotePlayerName].fade = true
+					gameState.players[remotePlayerName].fadeEndTime = gameState.time + 2
+				end
 				
 				gameState.players[remotePlayerName].remoteContact = false
 				MP.SendChatMessage(-1, "".. remotePlayerName .." has captured the flag!")
@@ -827,6 +832,11 @@ function onTransporterContact(localPlayerID, data)
 				MP.TriggerClientEvent(remotePlayerID, "allowResets", "nil") --lost flag
 				MP.TriggerClientEvent(remotePlayerID, "onLostFlag", "nil")
 				gameState.players[localPlayerName].localContact = false
+				if ghosts then
+					MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[localPlayerName].vehID)
+					gameState.players[localPlayerName].fade = true
+					gameState.players[localPlayerName].fadeEndTime = gameState.time + 2
+				end
 				MP.SendChatMessage(-1, "".. localPlayerName .." has captured the flag!")
 			end
 			timeSinceLastContact = 0
