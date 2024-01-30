@@ -9,6 +9,7 @@ local mod = math.fmod
 local rand = math.random
 
 local gameState = {players = {}}
+local vehicleIDs = {} --need this to couple vehid on spawn to player. gameState.players needs to be reset 
 local laststate = gameState
 local levelName = ""
 local area = ""
@@ -25,6 +26,7 @@ local chosenTeams = {}
 local lastCollision = {"", ""}
 local autoStartTimer = 0
 local autoStart = false
+local ghosts = true
 
 gameState.flagExists = false
 gameState.gameRunning = false
@@ -269,6 +271,7 @@ local function teamAlreadyChosen(team)
 end
 
 local function gameSetup()
+	MP.TriggerClientEvent(-1, "requestVehicleID", "nil")
 	local levelAvailable = false
 	for i, level in pairs(levels) do
 		if level == levelName then levelAvailable = true end
@@ -327,6 +330,8 @@ local function gameSetup()
 			-- player.allowedResets = true
 			-- player.resetTimer = 3
 			-- player.resetTimerActive = false
+			player.fadeEndTime = 0
+			player.fade = false
 			gameState.players[Player] = player
 			teamCount = teamCount + 1
 		end
@@ -423,6 +428,14 @@ local function transporterGameEnd(reason)
 			end
 		end
 	end
+
+	if ghosts then
+		for playerName,player in pairs(gameState.players) do
+			gameState.players[playerName].fade = false
+			-- CElog("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
+			MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[playerName].vehID)
+		end	
+	end
 end
 
 local function showPrefabs(player) --shows the prefabs belonging to this map and this area
@@ -458,6 +471,7 @@ function transporter(player, argument)
 		MP.SendChatMessage(player.playerID, "\"/transporter teams \'true/false\' \" to specify if the transporter games uses teams.")
 		MP.SendChatMessage(player.playerID, "\"/transporter allow resets \'true/false\' \" to specify if the flag carrier can reset without losing the flag.")
 		MP.SendChatMessage(player.playerID, "\"/transporter create \'flag/goal\' \" to create a goal or flag, so you can make your own areas! \n Consult the tutorial on GitHub to learn how to do this.")
+		MP.SendChatMessage(player.playerID, "\"/transporter ghosts \'true/false\' \" to specify if people should be ghosts on reset and when getting the flag.")
 	elseif argument == "show" then
 		onAreaChange()
 		showPrefabs(player)
@@ -501,6 +515,14 @@ function transporter(player, argument)
 			gameState.allowFlagCarrierResets = true
 		elseif allowedString == "false" then
 			gameState.allowFlagCarrierResets = false
+		end
+		MP.SendChatMessage(-1, "Resets allowed when carrying flag: " .. dump(gameState.allowFlagCarrierResets) .. " (available options are true or false)")
+	elseif string.find(argument, "ghosts %S") then
+		local allowedString = string.sub(argument,8,10000)
+		if allowedString == "true" then
+			ghosts = true
+		elseif allowedString == "false" then
+			ghosts = false
 		end
 		MP.SendChatMessage(-1, "Resets allowed when carrying flag: " .. dump(gameState.allowFlagCarrierResets) .. " (available options are true or false)")
 	elseif string.find(argument, "create %S") then
@@ -565,6 +587,11 @@ local function gameRunningLoop()
 		for playername,player in pairs(players) do
 			if player.localContact and player.remoteContact then
 				MP.SendChatMessage(-1,""..playername.." has captured the flag!")
+			end		
+			if ghosts and player.fade and gameState.time >= player.fadeEndTime then
+				gameState.players[MP.GetPlayerName(player.ID)].fade = false
+				-- CElog("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 			end
 			playercount = playercount + 1
 		end
@@ -586,6 +613,13 @@ local function gameRunningLoop()
 		gameState.gameEnding = false
 		gameState.gameEnded = true
 		MP.TriggerClientEvent(-1, "onGameEnd", "nil")
+		if ghosts then
+			for playerName,player in pairs(gameState.players) do
+				gameState.players[playerName].fade = false
+				-- CElog("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
+				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[playerName].vehID)
+			end	
+		end
 	elseif not gameState.gameEnding and gameState.scoreLimit and gameState.scoreLimit ~= 0 then
 		for playerName,player in pairs(gameState.players) do
 			if player.score >= gameState.scoreLimit then
@@ -597,6 +631,14 @@ local function gameRunningLoop()
 	if gameState.gameRunning then
 		timeSinceLastContact = timeSinceLastContact + 1
 		gameState.time = gameState.time + 1
+	else
+		for playername,player in pairs(players) do
+			if ghosts then
+				-- gameState.players[MP.GetPlayerName(player.ID)].fade = false
+				CElog("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+			end
+		end
 	end
 
 	updateClients()
@@ -656,6 +698,7 @@ local function onInit(stateData)
 	MP.RegisterEvent("setGoalCount", "setGoalCount")
 	MP.RegisterEvent("resetFlagCarrier", "resetFlagCarrier")
 	MP.RegisterEvent("onTransporterContactreceive","onTransporterContact")
+	MP.RegisterEvent("setVehicleID","setVehicleID")
 
 	applyStuff(commands, TransporterCommands)
 	CElog("onInit done" .. dump(gameState))
@@ -715,8 +758,13 @@ end
 
 --called whenever a player resets their vehicle, holding insert spams this function.
 local function onVehicleReset(player, vehID, data)
-	if gameState.allowFlagCarrierResets then return end
-	resetFlagCarrier(nil, gameState.players[player.name])
+	if not gameState or not player or not gameState.players or not gameState.gameRunning or not gameState.players[player.name] or gameState.allowFlagCarrierResets then return end
+	resetFlagCarrier(nil, Util.JsonEncode(gameState.players[player.name]))
+	if ghosts then
+		MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(player.playerID)].vehID)
+		gameState.players[MP.GetPlayerName(player.playerID)].fade = true
+		gameState.players[MP.GetPlayerName(player.playerID)].fadeEndTime = gameState.time + 2
+	end
 end
 
 --called whenever a vehicle is deleted
@@ -793,6 +841,12 @@ function setFlagCarrier(playerID)
 		end
 		gameState.players[MP.GetPlayerName(playerID)].hasFlag = true
 		MP.TriggerClientEvent(-1, "removePrefabs", "flag")
+		-- CElog("" .. dump(gameState) .. " " .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
+		if ghosts then
+			MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
+			gameState.players[MP.GetPlayerName(playerID)].fade = true
+			gameState.players[MP.GetPlayerName(playerID)].fadeEndTime = gameState.time + 2
+		end
 		MP.SendChatMessage(-1,"".. MP.GetPlayerName(playerID) .." has the flag!")
 	end
 	updateClients()
@@ -834,6 +888,12 @@ function setGoalCount(playerID, data)
 	goalPrefabCount = tonumber(data)
 end
 
+function setVehicleID(playerID, vehID)
+	-- CElog("setVehicleID " .. MP.GetPlayerName(playerID))
+	vehicleIDs[MP.GetPlayerName(playerID)] = {}
+	vehicleIDs[MP.GetPlayerName(playerID)].vehID = vehID
+end
+
 M.onInit = onInit
 M.onUnload = onUnload
 
@@ -870,6 +930,7 @@ M.setGoalCount = setGoalCount
 M.resetFlagCarrier = resetFlagCarrier
 
 M.setLevelName = setLevelName
+M.setVehicleID = setVehicleID
 
 M.transporter = transporter
 M.ctf = ctf

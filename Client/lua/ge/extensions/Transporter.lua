@@ -560,21 +560,36 @@ function onBeamNGTrigger(data)
 			onGotFlag()
 			if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 		elseif trigger == "goalTrigger" then	
-			if not gamestate.allowFlagCarrierResets then
-				allowResets()
+			if not gamestate.players[MPVehicleGE.getNicknameMap()[data.subjectID]].fade then
+				if not gamestate.allowFlagCarrierResets then
+					allowResets()
+				end
+				if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
 			end
-			if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
 		end
     end
 end
 
--- function onTransporterFlagTrigger()
--- 	if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
--- end
+local function requestVehicleID()
+	-- log('D', logtag, "" .. dump(MPVehicleGE.getVehicleMap()) .. " " .. be:getPlayerVehicleID(0))
+	if not MPVehicleGE.getServerVehicleID(be:getPlayerVehicleID(0)) then return end
+	if TriggerServerEvent then TriggerServerEvent("setVehicleID", "" ..  MPVehicleGE.getServerVehicleID(be:getPlayerVehicleID(0))) end
+end
 
--- function onTransporterGoalTrigger()
--- 	if TriggerServerEvent then TriggerServerEvent("onGoal", "nil") end
--- end
+local function fadePerson(vehID)
+	local alpha = 128
+	if MPVehicleGE.getGameVehicleID(vehID) == -1 then return end
+	vehicle =  be:getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
+	vehicle:queueLuaCommand("obj:setGhostEnabled(true)")
+	vehicle:setMeshAlpha(alpha,"",false)
+end
+
+local function unfadePerson(vehID)
+	if MPVehicleGE.getGameVehicleID(vehID) == -1 then return end
+	vehicle =  be:getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
+	vehicle:queueLuaCommand("obj:setGhostEnabled(false)")
+	vehicle:setMeshAlpha(1,"")
+end
 
 local function requestLevelName()
   currentLevel = core_levels.getLevelName(getMissionFilename())
@@ -1076,6 +1091,9 @@ if MPGameNetwork then AddEventHandler("onFlagReset", onFlagReset) end
 if MPGameNetwork then AddEventHandler("onScore", onScore) end
 if MPGameNetwork then AddEventHandler("onWin", onWin) end
 if MPGameNetwork then AddEventHandler("onLose", onLose) end
+if MPGameNetwork then AddEventHandler("fadePerson", fadePerson) end
+if MPGameNetwork then AddEventHandler("unfadePerson", unfadePerson) end
+if MPGameNetwork then AddEventHandler("requestVehicleID", requestVehicleID) end
 
 -- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
 -- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
@@ -1109,6 +1127,9 @@ M.onGotFlag = onGotFlag
 M.onScore = onScore
 M.onWin = onWin
 M.onLose = onLose
+M.fadePerson = fadePerson
+M.unfadePerson = unfadePerson
+M.requestVehicleID = requestVehicleID
 -- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger
