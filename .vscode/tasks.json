@@ -28,7 +28,7 @@
         {
             "label": "Compress Release",
             "type": "shell",
-            "command": "zip -r Client/TransporterGamemode.zip ../Client && zip -r BeamMP-Transporter.zip Client ../Server",
+            "command": "rm -f Client && rm -f BeamMP-Transporter.zip && cd ../Client && zip -r Client/TransporterGamemode.zip && cd ../export && ../Client && zip -r BeamMP-Transporter.zip Client ../Server",
             "windows": {
                 "command": "Remove-Item -Path Client -Force -Recurse -ErrorAction SilentlyContinue ; Remove-Item -Path BeamMP-Transporter.zip -Force -ErrorAction SilentlyContinue ; Set-Location -Path ../Client ; 7z a -tzip ../export/Client/TransporterGamemode.zip . -aoa -r ; Set-Location -Path ../export ; 7z a -tzip BeamMP-Transporter.zip Client ../Server -aoa -r"
             },
