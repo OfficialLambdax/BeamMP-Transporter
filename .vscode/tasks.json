@@ -30,7 +30,7 @@
             "type": "shell",
             "command": "zip -r Client/TransporterGamemode.zip ../Client && zip -r BeamMP-Transporter.zip Client ../Server",
             "windows": {
-                "command": "7z a -tzip Client/TransporterGamemode.zip ../Client -aoa -r ; 7z a -tzip BeamMP-Transporter.zip Client ../Server -aoa -r"
+                "command": "Remove-Item -Path Client -Force -Recurse -ErrorAction SilentlyContinue ; Remove-Item -Path BeamMP-Transporter.zip -Force -ErrorAction SilentlyContinue ; Set-Location -Path ../Client ; 7z a -tzip ../export/Client/TransporterGamemode.zip . -aoa -r ; Set-Location -Path ../export ; 7z a -tzip BeamMP-Transporter.zip Client ../Server -aoa -r"
             },
             "options": {
                 "cwd": "export"
