@@ -753,6 +753,12 @@ function nametags(ownerName,player,vehicle) --draws flag nametags on people
 	end
 end
 
+local function requestVelocity()
+	local veh = be:getObjectByID(be:getPlayerVehicleID(0))
+	local vehSpeed = veh:getVelocity():len()*3.6
+	if TriggerServerEvent then TriggerServerEvent("setVehVel", vehSpeed) end
+end
+
 -- local function onVehicleResetted(gameVehicleID)
 -- 	log('D', logtag, "OnVehicleResetted called")
 -- 	if MPVehicleGE then
@@ -1096,6 +1102,7 @@ if MPGameNetwork then AddEventHandler("onLose", onLose) end
 if MPGameNetwork then AddEventHandler("fadePerson", fadePerson) end
 if MPGameNetwork then AddEventHandler("unfadePerson", unfadePerson) end
 if MPGameNetwork then AddEventHandler("requestVehicleID", requestVehicleID) end
+if MPGameNetwork then AddEventHandler("requestVelocity", requestVelocity) end
 
 -- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
 -- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
@@ -1132,6 +1139,7 @@ M.onLose = onLose
 M.fadePerson = fadePerson
 M.unfadePerson = unfadePerson
 M.requestVehicleID = requestVehicleID
+M.requestVelocity = requestVelocity
 -- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger

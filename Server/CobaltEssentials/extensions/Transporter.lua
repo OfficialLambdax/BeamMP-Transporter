@@ -10,6 +10,7 @@ local rand = math.random
 
 local gameState = {players = {}}
 local vehicleIDs = {} --need this to couple vehid on spawn to player. gameState.players needs to be reset 
+local vehVel = {}
 local laststate = gameState
 local levelName = ""
 local area = ""
@@ -574,6 +575,7 @@ local function gameRunningLoop()
 	elseif gameState.time == 0 then
 		gameStarting()
 	end
+	MP.TriggerClientEvent(-1, "requestVelocity", "nil")
 
 	if not gameState.gameEnding and gameState.playerCount == 0 then
 		gameState.gameEnding = true
@@ -592,6 +594,12 @@ local function gameRunningLoop()
 				gameState.players[MP.GetPlayerName(player.ID)].fade = false
 				-- CElog("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+			end
+			if ghosts and not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then --less than 10 km/h 
+				gameState.players[MP.GetPlayerName(player.ID)].fade = true
+				MP.TriggerClientEvent(-1, "fadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				gameState.players[MP.GetPlayerName(player.ID)].fadeEndTime = gameState.time + 2
+				-- CElog("A player should have faded cuz he slow af")
 			end
 			playercount = playercount + 1
 		end
@@ -699,6 +707,7 @@ local function onInit(stateData)
 	MP.RegisterEvent("resetFlagCarrier", "resetFlagCarrier")
 	MP.RegisterEvent("onTransporterContactreceive","onTransporterContact")
 	MP.RegisterEvent("setVehicleID","setVehicleID")
+	MP.RegisterEvent("setVehVel","setVehVel")
 
 	applyStuff(commands, TransporterCommands)
 	CElog("onInit done" .. dump(gameState))
@@ -852,11 +861,11 @@ function setFlagCarrier(playerID)
 		gameState.players[MP.GetPlayerName(playerID)].hasFlag = true
 		MP.TriggerClientEvent(-1, "removePrefabs", "flag")
 		-- CElog("" .. dump(gameState) .. " " .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
-		if ghosts then
-			MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
-			gameState.players[MP.GetPlayerName(playerID)].fade = true
-			gameState.players[MP.GetPlayerName(playerID)].fadeEndTime = gameState.time + 2
-		end
+		-- if ghosts then --uncomment to enable ghost when going through the flag marker
+		-- 	MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
+		-- 	gameState.players[MP.GetPlayerName(playerID)].fade = true
+		-- 	gameState.players[MP.GetPlayerName(playerID)].fadeEndTime = gameState.time + 2
+		-- end
 		MP.SendChatMessage(-1,"".. MP.GetPlayerName(playerID) .." has the flag!")
 	end
 	updateClients()
@@ -881,6 +890,12 @@ function setAreaNames(playerID, data)
 		table.insert(areaNames, name)
 	end
 	onAreaChange()
+end
+
+function setVehVel(playerID, vel)
+	vehVel[MP.GetPlayerName(playerID)] = {}
+	vehVel[MP.GetPlayerName(playerID)].vel = tonumber(vel)
+	-- CElog("Set the velocity: " .. vel)
 end
 
 function setLevels(playerID, data)
@@ -941,6 +956,7 @@ M.resetFlagCarrier = resetFlagCarrier
 
 M.setLevelName = setLevelName
 M.setVehicleID = setVehicleID
+M.setVehVel = setVehVel
 
 M.transporter = transporter
 M.ctf = ctf
