@@ -2,9 +2,6 @@
 
 This is a recreation of the Transporter/Capture the flag gamemode from Dirt 3 for BeamMP
 
-Prerequisites:
-  - Cobalt Essentials (https://forum.beammp.com/t/cobalt-essentials-v1-7-6-release/61)
-
 Installation:
   Download the latest release and copy the server and client folders into your server's Resources/ folder
 
