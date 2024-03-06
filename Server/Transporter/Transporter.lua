@@ -719,7 +719,7 @@ function onInit()
 	
 	MP.RegisterEvent("onPlayerFirstAuth","onPlayerFirstAuth")
 	MP.RegisterEvent("onPlayerAuth","onPlayerAuth")
-	MP.RegisterEvent("onPlayerConnecting","onPlayerConnecting")
+	-- MP.RegisterEvent("onPlayerConnecting","onPlayerConnecting")
 	MP.RegisterEvent("onPlayerJoining","onPlayerJoining")
 	MP.RegisterEvent("onPlayerJoin","onPlayerJoin")
 	MP.RegisterEvent("onPlayerDisconnect","onPlayerDisconnect")
@@ -747,10 +747,10 @@ function onPlayerAuth(player)
 
 end
 
---called whenever someone begins connecting to the server
-function onPlayerConnecting(player)
-	MP.TriggerClientEventJson(player.playerID, "receiveTransporterGameState", gameState)
-end
+-- --called whenever someone begins connecting to the server
+-- function onPlayerConnecting(playerID)
+-- 	MP.TriggerClientEventJson(playerID, "receiveTransporterGameState", gameState)
+-- end
 
 --called when a player begins loading
 function onPlayerJoining(player)
@@ -758,22 +758,22 @@ function onPlayerJoining(player)
 end
 
 --called whenever a player has fully joined the session
-function onPlayerJoin(player)
+function onPlayerJoin(playerID)
 	MP.TriggerClientEvent(-1, "requestLevelName", "nil") --TODO: fix this when changing levels somehow
 	MP.TriggerClientEvent(-1, "requestAreaNames", "nil")
 	MP.TriggerClientEvent(-1, "requestLevels", "nil")
 end
 
 --called whenever a player disconnects from the server
-function onPlayerDisconnect(player)
-	gameState.players[player.name] = nil
-	vehicleIDs[player.name] = nil
+function onPlayerDisconnect(playerID)
+	gameState.players[MP.GetPlayerName(playerID)] = nil
+	vehicleIDs[MP.GetPlayerName(playerID)] = nil
 end
 
 --called whenever a player sends a chat message
-function onChatMessage(player_id, player_name, chatMessage)
+function onChatMessage(playerID, player_name, chatMessage)
 	local player = {}
-	player.playerID = player_id
+	player.playerID = playerID
 	-- print("onChatMessage( " .. dump(player) .. ", " .. chatMessage .. ")")
 	if string.find(chatMessage, "/ctf") then
 		chatMessage = string.gsub(chatMessage, "/ctf ", "")
@@ -800,18 +800,19 @@ function onVehicleEdited(player, vehID,  data)
 end
 
 --called whenever a player resets their vehicle, holding insert spams this function.
-function onVehicleReset(player, vehID, data)
-	if not gameState or not player or not gameState.players or not gameState.gameRunning or not gameState.players[player.name] or gameState.allowFlagCarrierResets then return end
-	resetFlagCarrier(nil, Util.JsonEncode(gameState.players[player.name]))
+function onVehicleReset(playerID, vehID, data)
+	if not gameState or not playerID or not gameState.players or not gameState.gameRunning or not gameState.players[MP.GetPlayerName(playerID)] or gameState.allowFlagCarrierResets then return end
+	resetFlagCarrier(nil, Util.JsonEncode(gameState.players[MP.GetPlayerName(playerID)]))
 	if ghosts then
-		MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(player.playerID)].vehID)
-		gameState.players[MP.GetPlayerName(player.playerID)].fade = true
-		gameState.players[MP.GetPlayerName(player.playerID)].fadeEndTime = gameState.time + 2
+		MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
+		gameState.players[MP.GetPlayerName(playerID)].fade = true
+		gameState.players[MP.GetPlayerName(playerID)].fadeEndTime = gameState.time + 2
 	end
 end
 
 --called whenever a vehicle is deleted
 function onVehicleDeleted(player, vehID,  source)
+
 
 end
 
@@ -959,7 +960,7 @@ M.onUnload = onUnload
 M.onPlayerFirstAuth = onPlayerFirstAuth
 
 M.onPlayerAuth = onPlayerAuth
-M.onPlayerConnecting = onPlayerConnecting
+-- M.onPlayerConnecting = onPlayerConnecting
 M.onPlayerJoining = onPlayerJoining
 M.onPlayerJoin = onPlayerJoin
 M.onPlayerDisconnect = onPlayerDisconnect
