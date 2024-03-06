@@ -363,8 +363,8 @@ function gameSetup()
 	gameState.goalCount = 1
 	gameState.scoreLimit = requestedScoreLimit
 
-	spawnFlagAndGoal()
-	MP.TriggerClientEvent(-1, "spawnObstacles", "levels/" .. levelName .. "/multiplayer/" .. area .. "/obstacles.prefab.json")
+	-- spawnFlagAndGoal()
+	-- MP.TriggerClientEvent(-1, "spawnObstacles", "levels/" .. levelName .. "/multiplayer/" .. area .. "/obstacles.prefab.json")
 
 	updateClients()
 
@@ -581,6 +581,8 @@ function gameRunningLoop()
 
 	elseif gameState.time == 0 then
 		gameStarting()
+		spawnFlagAndGoal()
+		MP.TriggerClientEvent(-1, "spawnObstacles", "levels/" .. levelName .. "/multiplayer/" .. area .. "/obstacles.prefab.json")	
 	end
 	MP.TriggerClientEvent(-1, "requestVelocity", "nil")
 
