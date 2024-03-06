@@ -1,8 +1,8 @@
 --Transporter by Julianstap, 2023
 
 local M = {}
-M.COBALT_VERSION = "1.7.6"
-utils.setLogType("CTF",93)
+-- M.COBALT_VERSION = "1.7.6"
+-- utils.setLogType("CTF",93)
 
 local floor = math.floor
 local mod = math.fmod
@@ -44,11 +44,11 @@ local defaultFlagTint = true -- if the infecor should have a blue tint
 local defaultDistancecolor = 0.3 -- max intensity of the red filter
 local teams = false
 
-local TransporterCommands = {
-	transporter = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Enables the .zip with the filename specified."},
-	ctf = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."},
-	CTF = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."}
-}
+-- local TransporterCommands = {
+-- 	transporter = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Enables the .zip with the filename specified."},
+-- 	ctf = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."},
+-- 	CTF = {originModule = "Transporter", level = 0, arguments = {"argument"}, sourceLimited = 1, description = "Alias for transporter."}
+-- }
 
 function dump(o)
     if type(o) == 'table' then
@@ -84,7 +84,7 @@ function seconds_to_days_hours_minutes_seconds(total_seconds) --modified code fr
     return time_days ,time_hours , time_minutes , time_seconds
 end
 
-local function gameStarting()
+function gameStarting()
 	local days, hours , minutes , seconds = seconds_to_days_hours_minutes_seconds(roundLength)
 	local amount = 0
 	if days then
@@ -170,7 +170,7 @@ local function gameStarting()
 	MP.SendChatMessage(-1,"Transporter game started, you have to survive for "..(days or "")..""..(hours or "")..""..(minutes or "")..""..(seconds or "").."")
 end
 
-local function compareTable(gameState,tempTable,laststate)
+function compareTable(gameState,tempTable,laststate)
 	for variableName,variable in pairs(gameState) do
 		if type(variable) == "table" then
 			if not laststate[variableName] then
@@ -194,17 +194,17 @@ local function compareTable(gameState,tempTable,laststate)
 	end
 end
 
-local function updateClients()
+function updateClients()
 	local tempTable = {}
 	compareTable(gameState,tempTable,laststate)
-	-- CElog("updateClients: " .. dump(tempTable))
+	-- print("updateClients: " .. dump(tempTable))
 
 	if tempTable and next(tempTable) ~= nil then
 		MP.TriggerClientEventJson(-1, "updateTransporterGameState", tempTable)
 	end
 end
 
-local function spawnFlag()
+function spawnFlag()
 	local flagID = 0
 	if flagPrefabCount > 0 then
 		rand() --Some implementation need this before the numbers become random
@@ -212,11 +212,11 @@ local function spawnFlag()
 		rand()
 		flagID = rand(1,flagPrefabCount)
 	end
-	CElog("Chosen flag: levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json")
+	print("Chosen flag: levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json")
 	MP.TriggerClientEvent(-1, "spawnFlag", "levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
 end
 
-local function spawnGoal()
+function spawnGoal()
 	local goalID = 0
 	if goalPrefabCount > 0 then
 		rand() --Some implementation need this before the numbers become random
@@ -224,16 +224,16 @@ local function spawnGoal()
 		rand()
 		goalID = rand(1,goalPrefabCount)
 	end
-	CElog("Chosen goal: levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json")
+	print("Chosen goal: levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json")
 	MP.TriggerClientEvent(-1, "spawnGoal", "levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
 end
 
-local function spawnFlagAndGoal()
+function spawnFlagAndGoal()
 	spawnFlag()
 	spawnGoal()
 end
 
-local function applyStuff(targetDatabase, tables)
+function applyStuff(targetDatabase, tables)
 	local appliedTables = {}
 	for tableName, table in pairs(tables) do
 		if targetDatabase[tableName]:exists() == false then
@@ -248,10 +248,10 @@ end
 
 function setLevelName(playerID, name)
 	levelName = name
-	CElog("level name: " .. levelName)
+	print("level name: " .. levelName)
 end
 
-local function onAreaChange()	
+function onAreaChange()	
 	local foundArea = false
 	for key,areaName in pairs(areaNames) do
 		if areaName == requestedArea then
@@ -263,7 +263,7 @@ local function onAreaChange()
 		if areaNames[1] then
 			area = areaNames[1]
 			-- MP.SendChatMessage(-1, "The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
-			CElog("The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
+			print("The requested area for the transporter gamemode was not on this map, so it will default to the area " .. area)
 		else
 			MP.SendChatMessage(-1, "Could not find an area to play on, on the map " .. levelName)
 		end
@@ -273,11 +273,11 @@ local function onAreaChange()
 	MP.TriggerClientEvent(-1, "requestGoalCount", "nil")
 end
 
-local function teamAlreadyChosen(team)
+function teamAlreadyChosen(team)
 	return chosenTeams[team].chosen
 end
 
-local function gameSetup()
+function gameSetup()
 	MP.TriggerClientEvent(-1, "requestVehicleID", "nil")
 	local levelAvailable = false
 	for i, level in pairs(levels) do
@@ -370,7 +370,7 @@ local function gameSetup()
 	MP.TriggerClientEventJson(-1, "receiveTransporterGameState", gameState)
 end
 
-local function transporterGameEnd(reason)
+function transporterGameEnd(reason)
     MP.TriggerClientEvent(-1, "removePrefabs", "all")
 	gameState.gameEnding = true
 	if reason == nil or reason == "nil" then
@@ -393,7 +393,7 @@ local function transporterGameEnd(reason)
 	if teams and chosenTeams then
 		for teamName, teamData in pairs(chosenTeams) do
 			if chosenTeams[teamName].chosen then
-				-- CElog(dump(chosenTeams))
+				-- print(dump(chosenTeams))
 				chosenTeams[teamName].score = 0
 				for playername,player in pairs(gameState.players) do
 					if teamName == player.team then
@@ -428,7 +428,7 @@ local function transporterGameEnd(reason)
 		for playername,player in pairs(gameState.players) do
 			if player.score == highestScore then
 				MP.SendChatMessage(-1, "" .. playername .. " Won!")
-				CElog("" .. dump(player))
+				print("" .. dump(player))
 				MP.TriggerClientEvent(player.ID, "onWin", "nil")
 			else
 				MP.TriggerClientEvent(player.ID, "onLose", "nil")
@@ -439,13 +439,13 @@ local function transporterGameEnd(reason)
 	if ghosts then
 		for playerName,player in pairs(gameState.players) do
 			gameState.players[playerName].fade = false
-			-- CElog("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
+			-- print("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
 			MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[playerName].vehID)
 		end	
 	end
 end
 
-local function showPrefabs(player) --shows the prefabs belonging to this map and this area
+function showPrefabs(player) --shows the prefabs belonging to this map and this area
 	MP.TriggerClientEvent(player.playerID, "spawnObstacles", "levels/" .. levelName .. "/multiplayer/" .. area .. "/obstacles.prefab.json") 
 	for flagID=1,flagPrefabCount do
 		MP.TriggerClientEvent(player.playerID, "spawnFlag", "levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json") 
@@ -455,11 +455,11 @@ local function showPrefabs(player) --shows the prefabs belonging to this map and
 	end
 end
 
-local function createFlag(player)
+function createFlag(player)
 	MP.TriggerClientEvent(player.playerID, "onCreateFlag", "nil")
 end
 
-local function createGoal(player)
+function createGoal(player)
 	MP.TriggerClientEvent(player.playerID, "onCreateGoal", "nil")
 end
 
@@ -489,7 +489,7 @@ function transporter(player, argument)
 		if string.find(argument, "start %d") then
 			number = tonumber(string.sub(argument,7,10000))
 			roundLength = number * 60
-			CElog("Transporter game starting with duration: " .. number)
+			print("Transporter game starting with duration: " .. number)
 		end
 		if not gameState.gameRunning then
 			if gameState.scoreLimit and gameState.scoreLimit > 0 then
@@ -503,11 +503,11 @@ function transporter(player, argument)
 	elseif string.find(argument, "time limit %d") then
 		local number = tonumber(string.sub(argument,11,10000))
 		roundLength = number * 60
-		CElog("Transporter game time limit is now: " .. roundLength)
+		print("Transporter game time limit is now: " .. roundLength)
 	elseif string.find(argument, "score limit %d") then
 		local number = tonumber(string.sub(argument,12,10000))
 		requestedScoreLimit = number
-		CElog("Transporter game score limit is now: " .. number)
+		print("Transporter game score limit is now: " .. number)
 	elseif string.find(argument, "teams %S") then
 		local teamsString = string.sub(argument,7,10000)
 		if teamsString == "true" then
@@ -574,7 +574,7 @@ function CTF(player, argument) --alias for transporter
 	transporter(player, argument)
 end
 
-local function gameRunningLoop()
+function gameRunningLoop()
 	if gameState.time < 0 then
 		MP.SendChatMessage(-1,"Transporter game starting in "..math.abs(gameState.time).." second")
 
@@ -598,14 +598,14 @@ local function gameRunningLoop()
 			end		
 			if ghosts and player.fade and gameState.time >= player.fadeEndTime then
 				gameState.players[MP.GetPlayerName(player.ID)].fade = false
-				-- CElog("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				-- print("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 			end
 			if ghosts and not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then --less than 10 km/h 
 				gameState.players[MP.GetPlayerName(player.ID)].fade = true
 				MP.TriggerClientEvent(-1, "fadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				gameState.players[MP.GetPlayerName(player.ID)].fadeEndTime = gameState.time + 2
-				-- CElog("A player should have faded cuz he slow af")
+				-- print("A player should have faded cuz he slow af")
 			end
 			playercount = playercount + 1
 		end
@@ -630,7 +630,7 @@ local function gameRunningLoop()
 		if ghosts then
 			for playerName,player in pairs(gameState.players) do
 				gameState.players[playerName].fade = false
-				-- CElog("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
+				-- print("Triggering unfadePerson " .. vehicleIDs[playerName].vehID)
 				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[playerName].vehID)
 			end	
 		end
@@ -649,7 +649,7 @@ local function gameRunningLoop()
 		for playername,player in pairs(players) do
 			if ghosts then
 				-- gameState.players[MP.GetPlayerName(player.ID)].fade = false
-				CElog("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				print("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 			end
 		end
@@ -660,9 +660,9 @@ end
 
 --resets flagcarrier and spawns a new flag
 function resetFlagCarrier(localPlayerID, player) 
-	-- CElog("resetFlagCarrier: " .. dump(player) .. " " .. localPlayerID)
+	-- print("resetFlagCarrier: " .. dump(player) .. " " .. localPlayerID)
 	player = Util.JsonDecode(player)
-	-- CElog("resetFlagCarrier: " .. dump(player) .. " Gamestate: " .. dump(gameState))
+	-- print("resetFlagCarrier: " .. dump(player) .. " Gamestate: " .. dump(gameState))
 	if gameState.gameRunning and not gameState.gameEnding then
 		if player.hasFlag == true then
 			gameState.players[MP.GetPlayerName(localPlayerID)].hasFlag = false
@@ -671,7 +671,7 @@ function resetFlagCarrier(localPlayerID, player)
 			end
 			spawnFlag()
 			MP.TriggerClientEvent(-1, "onFlagReset", "nil")
-			CElog("Called onFlagReset")
+			print("Called onFlagReset")
 			return
 		end
 	end
@@ -690,7 +690,7 @@ function transporterTimer()
 end
 
 --called whenever the extension is loaded
-local function onInit(stateData)
+function onInit()
     MP.RegisterEvent("requestTransporterGameState","requestTransporterGameState")
     MP.RegisterEvent("transporter","transporter")
     MP.RegisterEvent("ctf","ctf")
@@ -714,66 +714,92 @@ local function onInit(stateData)
 	MP.RegisterEvent("onTransporterContactreceive","onTransporterContact")
 	MP.RegisterEvent("setVehicleID","setVehicleID")
 	MP.RegisterEvent("setVehVel","setVehVel")
+	MP.RegisterEvent("onChatMessage","onChatMessage")
+	
+	MP.RegisterEvent("onPlayerFirstAuth","onPlayerFirstAuth")
+	MP.RegisterEvent("onPlayerAuth","onPlayerAuth")
+	MP.RegisterEvent("onPlayerConnecting","onPlayerConnecting")
+	MP.RegisterEvent("onPlayerJoining","onPlayerJoining")
+	MP.RegisterEvent("onPlayerJoin","onPlayerJoin")
+	MP.RegisterEvent("onPlayerDisconnect","onPlayerDisconnect")
+	MP.RegisterEvent("onVehicleSpawn","onVehicleSpawn")
+	MP.RegisterEvent("onVehicleEdited","onVehicleEdited")
+	MP.RegisterEvent("onVehicleReset","onVehicleReset")
+	MP.RegisterEvent("onVehicleDeleted","onVehicleDeleted")
 
-	applyStuff(commands, TransporterCommands)
-	CElog("onInit done" .. dump(gameState))
+	-- applyStuff(commands, TransporterCommands)
+	print("--------------------Transporter loaded----------------")
 end
 
 
-local function onUnload()
+function onUnload()
 
 end
 
 --called whenever a player is authenticated by the server for the first time.
-local function onPlayerFirstAuth(player)
+function onPlayerFirstAuth(player)
 
 end
 
 --called whenever the player is authenticated by the server.
-local function onPlayerAuth(player)
+function onPlayerAuth(player)
 
 end
 
 --called whenever someone begins connecting to the server
-local function onPlayerConnecting(player)
+function onPlayerConnecting(player)
 	MP.TriggerClientEventJson(player.playerID, "receiveTransporterGameState", gameState)
 end
 
 --called when a player begins loading
-local function onPlayerJoining(player)
+function onPlayerJoining(player)
 
 end
 
 --called whenever a player has fully joined the session
-local function onPlayerJoin(player)
+function onPlayerJoin(player)
 	MP.TriggerClientEvent(-1, "requestLevelName", "nil") --TODO: fix this when changing levels somehow
 	MP.TriggerClientEvent(-1, "requestAreaNames", "nil")
 	MP.TriggerClientEvent(-1, "requestLevels", "nil")
 end
 
 --called whenever a player disconnects from the server
-local function onPlayerDisconnect(player)
+function onPlayerDisconnect(player)
 	gameState.players[player.name] = nil
 	vehicleIDs[player.name] = nil
 end
 
 --called whenever a player sends a chat message
-local function onChatMessage(player, chatMessage)
-
+function onChatMessage(player_id, player_name, chatMessage)
+	local player = {}
+	player.playerID = player_id
+	-- print("onChatMessage( " .. dump(player) .. ", " .. chatMessage .. ")")
+	if string.find(chatMessage, "/ctf") then
+		chatMessage = string.gsub(chatMessage, "/ctf ", "")
+		transporter(player, chatMessage)
+	end
+	if string.find(chatMessage, "/CTF") then
+		chatMessage = string.gsub(chatMessage, "/CTF ", "")
+		transporter(player, chatMessage)
+	end
+	if string.find(chatMessage, "/transporter") then
+		chatMessage = string.gsub(chatMessage, "/transporter ", "")
+		transporter(player, chatMessage)
+	end
 end
 
 --called whenever a player spawns a vehicle.
-local function onVehicleSpawn(player, vehID,  data)
+function onVehicleSpawn(player, vehID,  data)
 
 end
 
 --called whenever a player applies their vehicle edits.
-local function onVehicleEdited(player, vehID,  data)
+function onVehicleEdited(player, vehID,  data)
 
 end
 
 --called whenever a player resets their vehicle, holding insert spams this function.
-local function onVehicleReset(player, vehID, data)
+function onVehicleReset(player, vehID, data)
 	if not gameState or not player or not gameState.players or not gameState.gameRunning or not gameState.players[player.name] or gameState.allowFlagCarrierResets then return end
 	resetFlagCarrier(nil, Util.JsonEncode(gameState.players[player.name]))
 	if ghosts then
@@ -784,22 +810,22 @@ local function onVehicleReset(player, vehID, data)
 end
 
 --called whenever a vehicle is deleted
-local function onVehicleDeleted(player, vehID,  source)
+function onVehicleDeleted(player, vehID,  source)
 
 end
 
 --whenever a message is sent to the Rcon
-local function onRconCommand(player, message, password, prefix)
+function onRconCommand(player, message, password, prefix)
 
 end
 
 --whenever a new client interacts with the RCON
-local function onNewRconClient(client)
+function onNewRconClient(client)
 
 end
 
 --called when the server is stopped through the stopServer() function
-local function onStopServer()
+function onStopServer()
 
 end
 
@@ -867,7 +893,7 @@ function setFlagCarrier(playerID)
 		end
 		gameState.players[MP.GetPlayerName(playerID)].hasFlag = true
 		MP.TriggerClientEvent(-1, "removePrefabs", "flag")
-		-- CElog("" .. dump(gameState) .. " " .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
+		-- print("" .. dump(gameState) .. " " .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
 		-- if ghosts then --uncomment to enable ghost when going through the flag marker
 		-- 	MP.TriggerClientEvent(-1, "fadePerson", "" .. vehicleIDs[MP.GetPlayerName(playerID)].vehID)
 		-- 	gameState.players[MP.GetPlayerName(playerID)].fade = true
@@ -892,7 +918,7 @@ end
 
 function setAreaNames(playerID, data)
 	areaNames = {} 
-	CElog("Available areas: " .. data)
+	print("Available areas: " .. data)
 	for name in data:gmatch("%S+") do 
 		table.insert(areaNames, name)
 	end
@@ -902,7 +928,7 @@ end
 function setVehVel(playerID, vel)
 	vehVel[MP.GetPlayerName(playerID)] = {}
 	vehVel[MP.GetPlayerName(playerID)].vel = tonumber(vel)
-	-- CElog("Set the velocity: " .. vel)
+	-- print("Set the velocity: " .. vel)
 end
 
 function setLevels(playerID, data)
@@ -921,7 +947,7 @@ function setGoalCount(playerID, data)
 end
 
 function setVehicleID(playerID, vehID)
-	-- CElog("setVehicleID " .. MP.GetPlayerName(playerID))
+	-- print("setVehicleID " .. MP.GetPlayerName(playerID))
 	vehicleIDs[MP.GetPlayerName(playerID)] = {}
 	vehicleIDs[MP.GetPlayerName(playerID)].vehID = vehID
 end
