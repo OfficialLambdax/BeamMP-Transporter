@@ -161,6 +161,52 @@ thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name
 mapData[thisLevelData.name] = thisLevelData
 mapData.levels = mapData.levels .. " " .. thisLevelData.name
 
+--fairhaven area data:
+thisLevelData = {}
+thisLevelData.name = "fairhaven"
+thisLevelData.levelData = {}
+thisLevelData.areas = ""
+
+--Airport area data:
+thisAreaData = {}
+thisAreaData.name = "Airport"
+thisAreaData.flagcount = "25"
+thisAreaData.goalcount = "24"
+thisLevelData.levelData[thisAreaData.name] = thisAreaData
+thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name 
+mapData[thisLevelData.name] = thisLevelData
+mapData.levels = mapData.levels .. " " .. thisLevelData.name
+
+--AbandonedAirport:
+thisAreaData = {}
+thisAreaData.name = "AbandonedAirport"
+thisAreaData.flagcount = "0"
+thisAreaData.goalcount = "0"
+thisLevelData.levelData[thisAreaData.name] = thisAreaData
+thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name 
+mapData[thisLevelData.name] = thisLevelData
+mapData.levels = mapData.levels .. " " .. thisLevelData.name
+
+--Gazebo:
+thisAreaData = {}
+thisAreaData.name = "Gazebo"
+thisAreaData.flagcount = "0"
+thisAreaData.goalcount = "0"
+thisLevelData.levelData[thisAreaData.name] = thisAreaData
+thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name 
+mapData[thisLevelData.name] = thisLevelData
+mapData.levels = mapData.levels .. " " .. thisLevelData.name
+
+--Park:
+thisAreaData = {}
+thisAreaData.name = "Park"
+thisAreaData.flagcount = "8"
+thisAreaData.goalcount = "8"
+thisLevelData.levelData[thisAreaData.name] = thisAreaData
+thisLevelData.areas = thisLevelData.areas .. " " .. thisAreaData.name 
+mapData[thisLevelData.name] = thisLevelData
+mapData.levels = mapData.levels .. " " .. thisLevelData.name
+
 local currentArea = ""
 local currentLevel = ""
 local lastCreatedFlagID = 1
@@ -352,81 +398,6 @@ function disallowResets()
 	end
 end
 
-local function spawnFlag(filepath, offset) 
-	log('D', logTag, filepath)
-	local offsetString = '0 0 0'
-	if offset then
-		offsetString = "" .. offset.x .. " " .. offset.y .. " " .. offset.z
-	end
-	log('D', logTag, "Offset: " .. offsetString)
-	flagPrefabActive = true
-	flagPrefabPath   = filepath
-	flagPrefabName   = string.gsub(flagPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
-	flagPrefabObj    = spawnPrefab(flagPrefabName, flagPrefabPath, offsetString, '0 0 1', '1 1 1')
-	log('D', logTag, "flagPrefabObj: " .. dump(flagPrefabObj))
-	-- read local file 
-	local file = io.open(flagPrefabPath, "rb")
-	if not file then return end
-	local jsonString = file:read "*a"
-	file:close()
-	log('D', logTag, "prefab json: " .. dump(jsonString))
-	if jsonString then 
-		local line = jsonDecode(jsonString)
-		if line.name == "flagTrigger" then 
-			flagLocation = vec3(line.position)
-		end
-	end
-end
-
-local function spawnGoal(filepath, offset) 
-	log('D', logTag, filepath)
-	local offsetString = '0 0 0'
-	if offset then
-		offsetString = "" .. offset.x .. " " .. offset.y .. " " .. offset.z
-	end
-	log('D', logTag, "Offset: " .. offsetString)
-	goalPrefabActive = true
-	goalPrefabPath   = filepath
-	goalPrefabName   = string.gsub(goalPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
-	goalPrefabObj    = spawnPrefab(goalPrefabName, goalPrefabPath,  offsetString, '0 0 1', '1 1 1')
-	log('D', logTag, "goalPrefabObj: " .. dump(goalPrefabObj))	
-	-- read local file 
-	local file = io.open(goalPrefabPath, "rb")
-	if not file then return end
-	local jsonString = file:read "*a"
-	file:close()	
-	log('D', logTag, "prefab json: " .. dump(jsonString))
-	if jsonString then 
-		local line = jsonDecode(jsonString)
-		if line.name == "goalTrigger" then 
-			goalLocation = vec3(line.position)
-		end
-	end
-end
-
-local function onCreateFlag()
-	local currentVehID = be:getPlayerVehicleID(0)
-	local veh = be:getObjectByID(currentVehID)
-	if not veh then return end
-	spawnFlag("levels/flag_.prefab.json", veh:getPosition())
-end
-
-local function onCreateGoal()
-	local currentVehID = be:getPlayerVehicleID(0)
-	local veh = be:getObjectByID(currentVehID)
-	if not veh then return end
-	spawnGoal("levels/goal_.prefab.json", veh:getPosition())
-end
-
-local function spawnObstacles(filepath) 
-	log('D', logTag, filepath)
-	obstaclesPrefabActive = true
-	obstaclesPrefabPath   = filepath
-	obstaclesPrefabName   = string.gsub(obstaclesPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
-	obstaclesPrefabObj    = spawnPrefab(obstaclesPrefabName, obstaclesPrefabPath, '0 0 0', '0 0 1', '1 1 1')
-	be:reloadStaticCollision(true)
-end
-
 local function removePrefabs(type)
 	log('D', logTag, "removePrefabs(" .. type .. ") Called" )
 	if type == "flag" and flagPrefabActive then 
@@ -480,6 +451,144 @@ local function removePrefabs(type)
 			removePrefab(prefabPath)
 		end
 	end
+end
+
+local function spawnFlag(filepath, offset) 
+	log('D', logTag, filepath)
+	local offsetString = '0 0 0'
+	if offset then
+		offsetString = "" .. offset.x .. " " .. offset.y .. " " .. offset.z
+	end
+	log('D', logTag, "Offset: " .. offsetString)
+	flagPrefabActive = true
+	flagPrefabPath   = filepath
+	flagPrefabName   = string.gsub(flagPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
+	flagPrefabObj    = spawnPrefab(flagPrefabName, flagPrefabPath, offsetString, '0 0 1', '1 1 1')
+	log('D', logTag, "flagPrefabObj: " .. dump(flagPrefabObj))
+	-- read local file
+	local file = io.open(flagPrefabPath, "rb")
+	if not file then return end
+	local jsonString = file:read "*a"
+	file:close()
+	log('D', logTag, "prefab json: " .. dump(jsonString))
+	if jsonString then 
+		local line = jsonDecode(jsonString)
+		if string.match(line.name, "flag(%d*)Trigger") then 
+			flagLocation = vec3(line.position)
+		end
+	end
+	if not flagLocation then
+		flagLocation = vec3(0,0,0)
+	end
+end
+
+local function spawnGoal(filepath, offset) 
+	log('D', logTag, filepath)
+	local offsetString = '0 0 0'
+	if offset then
+		offsetString = "" .. offset.x .. " " .. offset.y .. " " .. offset.z
+	end
+	log('D', logTag, "Offset: " .. offsetString)
+	goalPrefabActive = true
+	goalPrefabPath   = filepath
+	goalPrefabName   = string.gsub(goalPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
+	goalPrefabObj    = spawnPrefab(goalPrefabName, goalPrefabPath,  offsetString, '0 0 1', '1 1 1')
+	log('D', logTag, "goalPrefabObj: " .. dump(goalPrefabObj))	
+	-- read local file 
+	local file = io.open(goalPrefabPath, "rb")
+	if not file then return end
+	local jsonString = file:read "*a"
+	file:close()	
+	log('D', logTag, "prefab json: " .. dump(jsonString))
+	if jsonString then 
+		local line = jsonDecode(jsonString)
+		if string.match(line.name, "goal(%d*)Trigger") then 
+			goalLocation = vec3(line.position)
+		end
+	end
+	if not goalLocation then
+		goalLocation = vec3(0,0,0)
+	end
+end
+
+local function onCreateFlag()
+	removePrefabs("flag") --if you want to see more than one prefab at a time also remove this line
+	local currentVehID = be:getPlayerVehicleID(0)
+	local veh = be:getObjectByID(currentVehID)
+	if not veh then return end   
+	--try fixing commented stuff when you want to see more than one prefab at a time:
+	
+	-- -- Load the prefab file
+    -- local file = io.open("levels/flag_.prefab.json", "r")
+    -- local content = file:read("*all")
+    -- file:close()
+
+    -- -- Replace "flag" with "flag" followed by the ID
+    -- local newContent = string.gsub(content, "flag", "flag" .. lastCreatedFlagID)
+
+    -- -- Write the modified content to the file
+    -- file = io.open("levels/flag" .. lastCreatedFlagID .. ".prefab.json", "w")
+    -- file:write(newContent)
+    -- file:close()
+
+    -- Spawn the flag
+    -- spawnFlag("levels/flag" .. lastCreatedFlagID .. ".prefab.json", veh:getPosition())
+    spawnFlag("levels/flag_.prefab.json", veh:getPosition())
+	if flagPrefabObj then
+		local succes = flagPrefabObj:save("levels/" .. currentLevel .. "/" .. flagPrefabName .. ".prefab.json", false)
+		-- log('D', logtag, "saving: levels/" .. currentLevel .. "/" .. flagPrefabName .. ".prefab.json")
+	end
+	-- Write the old content to the file
+	-- file = io.open("levels/flag" .. lastCreatedFlagID .. ".prefab.json", "w")
+	-- file:write(content)
+	-- file:close()
+
+	lastCreatedFlagID = lastCreatedFlagID + 1
+end
+
+local function onCreateGoal()
+	removePrefabs("goal") --if you want to see more than one prefab at a time also remove this line
+	local currentVehID = be:getPlayerVehicleID(0)
+	local veh = be:getObjectByID(currentVehID)
+	if not veh then return end
+	--try fixing commented stuff when you want to see more than one prefab at a time:
+
+	-- -- Load the prefab file
+    -- local file = io.open("levels/goal_.prefab.json", "r")
+    -- local content = file:read("*all")
+    -- file:close()
+
+    -- -- Replace "goal" with "goal" followed by the ID
+    -- local newContent = string.gsub(content, "goal", "goal" .. lastCreatedGoalID)
+
+    -- -- Write the modified content to the file
+    -- file = io.open("levels/goal" .. lastCreatedGoalID .. ".prefab.json", "w")
+    -- file:write(newContent)
+    -- file:close()
+
+    -- Spawn the goal
+    -- spawnGoal("levels/goal" .. lastCreatedGoalID .. ".prefab.json", veh:getPosition())
+    spawnGoal("levels/goal_.prefab.json", veh:getPosition())
+	if goalPrefabObj then
+		--Save it
+		local succes = goalPrefabObj:save("levels/" .. currentLevel .. "/" .. goalPrefabName .. ".prefab.json", false)
+		-- log('D', logtag, "saving: levels/" .. currentLevel .. "/" .. goalPrefabName .. ".prefab.json")
+	end
+    -- Write the old content to the file
+    -- file = io.open("levels/goal" .. lastCreatedGoalID .. ".prefab.json", "w")
+    -- file:write(content)
+    -- file:close()
+
+	lastCreatedGoalID = lastCreatedGoalID + 1
+end
+
+local function spawnObstacles(filepath) 
+	log('D', logTag, filepath)
+	obstaclesPrefabActive = true
+	obstaclesPrefabPath   = filepath
+	obstaclesPrefabName   = string.gsub(obstaclesPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
+	obstaclesPrefabObj    = spawnPrefab(obstaclesPrefabName, obstaclesPrefabPath, '0 0 0', '0 0 1', '1 1 1')
+	be:reloadStaticCollision(true)
 end
 
 function onGameEnd()
@@ -551,7 +660,7 @@ function onBeamNGTrigger(data)
 	-- if data.event ~= "enter" then return end
     local trigger = data.triggerName
     if MPVehicleGE.isOwn(data.subjectID) == true then
-		if trigger == "flagTrigger" then
+		if string.match(trigger, "flag(%d*)Trigger") then
 			if not gamestate.players[MPVehicleGE.getNicknameMap()[data.subjectID]].fade then
 				if not gamestate.allowFlagCarrierResets then
 					disallowResets()
@@ -561,7 +670,7 @@ function onBeamNGTrigger(data)
 				onGotFlag()
 				if TriggerServerEvent then TriggerServerEvent("setFlagCarrier", "nil") end
 			end
-		elseif trigger == "goalTrigger" then	
+		elseif string.match(trigger, "goal(%d*)Trigger") then	
 			if not gamestate.players[MPVehicleGE.getNicknameMap()[data.subjectID]].fade then
 				if not gamestate.allowFlagCarrierResets then
 					allowResets()
@@ -953,7 +1062,7 @@ local function onPreRender(dt)
 		flagMarker.showIcon = false
 	end
 
-	if flagPrefabActive and flagLocation then
+	if flagPrefabActive and flagLocation and flagLocation.z then
 		local veh = be:getObjectByID(currentVehID)	
 		if veh then
 			local vehPos = veh:getPosition()
@@ -984,7 +1093,7 @@ local function onPreRender(dt)
 		end
 	end
 
-	if goalPrefabActive and goalLocation then
+	if goalPrefabActive and goalLocation and goalLocation.z then
 		local veh = be:getObjectByID(currentVehID)	
 		if veh then
 			local vehPos = veh:getPosition()

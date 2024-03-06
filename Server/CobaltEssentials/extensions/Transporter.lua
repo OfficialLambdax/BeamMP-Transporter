@@ -205,19 +205,25 @@ local function updateClients()
 end
 
 local function spawnFlag()
-	rand() --Some implementation need this before the numbers become random
-	rand()
-	rand()
-	local flagID = rand(1,flagPrefabCount)	
+	local flagID = 0
+	if flagPrefabCount > 0 then
+		rand() --Some implementation need this before the numbers become random
+		rand()
+		rand()
+		flagID = rand(1,flagPrefabCount)
+	end
 	CElog("Chosen flag: levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json")
 	MP.TriggerClientEvent(-1, "spawnFlag", "levels/" .. levelName .. "/multiplayer/" .. area .. "/flag" .. flagID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
 end
 
 local function spawnGoal()
-	rand() --Some implementation need this before the numbers become random
-	rand()
-	rand()
-	local goalID = rand(1,goalPrefabCount)
+	local goalID = 0
+	if goalPrefabCount > 0 then
+		rand() --Some implementation need this before the numbers become random
+		rand()
+		rand()
+		goalID = rand(1,goalPrefabCount)
+	end
 	CElog("Chosen goal: levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json")
 	MP.TriggerClientEvent(-1, "spawnGoal", "levels/" .. levelName .. "/multiplayer/" .. area .. "/goal" .. goalID .. ".prefab.json") --flagPrefabTable[rand(1, flagPrefabTable.size())]
 end
