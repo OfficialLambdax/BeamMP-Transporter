@@ -1,3 +1,3 @@
-{"name":"goalTrigger","class":"BeamNGTrigger","persistentId":"c9790c9c-3e8f-4494-9f29-8122db3f7934","__parent":"goal25_group","position":[-26.0845222,383.477966,131.774429],"scale":[6,6,30],"triggerType":"Box"}
+{"name":"goalTrigger","class":"BeamNGTrigger","luaFunction":"onCTFTrigger","persistentId":"c9790c9c-3e8f-4494-9f29-8122db3f7934","__parent":"goal25_group","position":[-26.0845222,383.477966,131.774429],"scale":[6,6,30],"triggerType":"Box"}
 {"name":"goal25_group","class":"SimGroup","persistentId":"95ad2acc-6057-4d97-8f89-aeed159804e8","groupPosition":"0 0 0"}
 {"name":"goal25TSStatic","class":"TSStatic","persistentId":"73298e42-0472-4931-ac40-98f574d70f3e","__parent":"goal25_group","position":[-26.0634651,383.477966,120.202271],"collisionType":"None","decalType":"None","instanceColor":[0,1,0.00179100037,1],"isRenderEnabled":false,"scale":[30,30,7],"shapeName":"/art/shapes/interface/single_faded_column.dae","useInstanceRenderData":true}

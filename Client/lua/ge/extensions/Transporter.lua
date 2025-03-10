@@ -488,11 +488,16 @@ local function spawnGoal(filepath, offset)
 	if offset then
 		offsetString = "" .. offset.x .. " " .. offset.y .. " " .. offset.z
 	end
+	if gamestate.teams then 
+		scaleString = '2 2 2'
+	else 
+		scaleString = '1 1 1'
+	end
 	log('D', logTag, "Offset: " .. offsetString)
 	goalPrefabActive = true
 	goalPrefabPath   = filepath
 	goalPrefabName   = string.gsub(goalPrefabPath, "(.*/)(.*)", "%2"):sub(1, -13)
-	goalPrefabObj    = spawnPrefab(goalPrefabName, goalPrefabPath,  offsetString, '0 0 1', '1 1 1')
+	goalPrefabObj    = spawnPrefab(goalPrefabName, goalPrefabPath,  offsetString, '0 0 1', scaleString)
 	log('D', logTag, "goalPrefabObj: " .. dump(goalPrefabObj))	
 	-- read local file 
 	local file = io.open(goalPrefabPath, "rb")
@@ -592,7 +597,7 @@ local function spawnObstacles(filepath)
 end
 
 function onGameEnd()
-	core_gamestate.setGameState('multiplayer', 'multiplayer', 'multilpayer') --reset the app layout
+	core_gamestate.setGameState('multiplayer', 'multiplayer', 'multiplayer') --reset the app layout
 	allowResets()
 end
 
@@ -654,7 +659,7 @@ local function dropPlayerAtCameraNoReset()
 	-- log('D', logtag, "dropPlayerAtCameraNoReset called " .. MPConfig.getNickname() .. " " .. dump(gamestate.players))
 end
 
-function onBeamNGTrigger(data)
+function onCTFTrigger(data)
 	-- log('D', logtag, "trigger data: " .. dump(data))
     if data == "null" then return end
 	-- if data.event ~= "enter" then return end
@@ -959,14 +964,8 @@ local function color(player,vehicle,team,dt)
 end
 
 local function onPreRender(dt)
-	if MPCoreNetwork and not MPCoreNetwork.isMPSession() then return end
-
+	if not gamestate then return end
 	local currentVehID = be:getPlayerVehicleID(0)
-	local currentOwnerName = MPConfig.getNickname()
-	if currentVehID and MPVehicleGE.getVehicleByGameID(currentVehID) then
-		currentOwnerName = MPVehicleGE.getVehicleByGameID(currentVehID).ownerName
-	end
-
 	if not gamestate.gameRunning or gamestate.gameEnding then 
 		local veh = be:getObjectByID(currentVehID)
 		if veh then
@@ -991,6 +990,11 @@ local function onPreRender(dt)
 			veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
 		end
 		return 
+	end
+	local currentVehID = be:getPlayerVehicleID(0)
+	local currentOwnerName = MPConfig.getNickname()
+	if currentVehID and MPVehicleGE.getVehicleByGameID(currentVehID) then
+		currentOwnerName = MPVehicleGE.getVehicleByGameID(currentVehID).ownerName
 	end
 	resetCarColors()
 	-- log('D', logtag, "onPreRender called")
@@ -1252,7 +1256,7 @@ M.requestVelocity = requestVelocity
 -- M.onVehicleResetted = onVehicleResetted
 -- M.onTransporterFlagTrigger = onTransporterFlagTrigger
 -- M.onTransporterGoalTrigger = onTransporterGoalTrigger
-M.onBeamNGTrigger = onBeamNGTrigger
+M.onCTFTrigger = onCTFTrigger
 commands.dropPlayerAtCameraNoReset = dropPlayerAtCameraNoReset
 
 return M

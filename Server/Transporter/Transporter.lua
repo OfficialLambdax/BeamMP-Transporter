@@ -8,6 +8,7 @@ local floor = math.floor
 local mod = math.fmod
 local rand = math.random
 
+local playersOutsideOfRound = {}
 local gameState = {players = {}}
 local vehicleIDs = {} --need this to couple vehid on spawn to player. gameState.players needs to be reset 
 local vehVel = {}
@@ -308,13 +309,7 @@ function gameSetup()
 			playerCount = playerCount + 1
 		end
 	end
-	if playerCount % 2 == 0 then
-		teamSize = playerCount / 2
-	elseif playerCount % 3 == 0 then
-		teamSize = playerCount / 3
-	else
-		teamSize = 1
-	end
+	teamSize = math.floor(playerCount / #possibleTeams)
 	local chosenTeam = possibleTeams[rand(1,#possibleTeams)]
 	local teamCount = 0
 	for ID,Player in pairs(MP.GetPlayers()) do
@@ -398,7 +393,7 @@ function transporterGameEnd(reason)
 				chosenTeams[teamName].score = 0
 				for playername,player in pairs(gameState.players) do
 					if teamName == player.team then
-						chosenTeams[teamName].score = chosenTeams[teamName].score + player.score
+						chosenTeams[teamName].totalScore = chosenTeams[teamName].totalScore + player.score
 					end
 				end
 				if chosenTeams[teamName].score > highestScore then
@@ -410,6 +405,7 @@ function transporterGameEnd(reason)
 		end
 	else
 		for playername,player in pairs(gameState.players) do
+			
 			if player.score > highestScore then
 				highestScore = player.score
 			end
@@ -421,6 +417,7 @@ function transporterGameEnd(reason)
 		for playername,player in pairs(gameState.players) do
 			if player.team == winningTeam then
 				MP.TriggerClientEvent(player.ID, "onWin", "nil")
+				playersOutsideOfRound[playername].totalScore = playersOutsideOfRound[playername].totalScore + 1--player.score
 			else
 				MP.TriggerClientEvent(player.ID, "onLose", "nil")
 			end
@@ -431,10 +428,15 @@ function transporterGameEnd(reason)
 				MP.SendChatMessage(-1, "" .. playername .. " Won!")
 				print("" .. dump(player))
 				MP.TriggerClientEvent(player.ID, "onWin", "nil")
+				playersOutsideOfRound[playername].totalScore = playersOutsideOfRound[playername].totalScore + 1--player.score
 			else
 				MP.TriggerClientEvent(player.ID, "onLose", "nil")
 			end
 		end
+	end
+	MP.SendChatMessage("Amount of rounds won:")
+	for playername, player in pairs(playersOutsideOfRound) do
+		MP.SendChatMessage(player.ID, "" .. playername .. ": " .. playersOutsideOfRound[playername].totalScore)
 	end
 
 	if ghosts then
@@ -599,24 +601,27 @@ function gameRunningLoop()
 			if player.localContact and player.remoteContact then
 				MP.SendChatMessage(-1,""..playername.." has captured the flag!")
 			end		
-			if ghosts and player.fade and gameState.time >= player.fadeEndTime then
+			if ghosts and not teams and player.fade and gameState.time >= player.fadeEndTime then
 				gameState.players[MP.GetPlayerName(player.ID)].fade = false
-				-- print("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				MP.TriggerClientEvent(-1, "unfadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				-- print("Triggering unfadePerson " .. vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
+				-- MP.TriggerClientEvent(player.ID, "allowResets", "nil")
 			end
-			if ghosts and not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then --less than 10 km/h 
+			if ghosts and not teams and not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then --less than 10 km/h 
 				gameState.players[MP.GetPlayerName(player.ID)].fade = true
 				MP.TriggerClientEvent(-1, "fadePerson", vehicleIDs[MP.GetPlayerName(player.ID)].vehID)
 				gameState.players[MP.GetPlayerName(player.ID)].fadeEndTime = gameState.time + 2
 				-- print("A player should have faded cuz he slow af")
 			end
+			if not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then
+				MP.TriggerClientEvent(player.ID, "allowResets", "nil")
+				--TODO: refactor reset system to check all the rules in a single place, do the same for fading. So do all checks where needed and expose bools so rules can be changed easily
+			else
+				MP.TriggerClientEvent(player.ID, "disallowResets", "nil") 
+			end
 			playercount = playercount + 1
 		end
 		gameState.playerCount = playercount
-
-		if gameState.time >= 5 and transporterCount == 0 then
-
-		end
 	end
 
 	if not gameState.gameEnding and gameState.time == gameState.roundLength then
@@ -761,6 +766,8 @@ end
 
 --called whenever a player has fully joined the session
 function onPlayerJoin(playerID)
+	playersOutsideOfRound[MP.GetPlayerName(playerID)] = {}
+	playersOutsideOfRound[MP.GetPlayerName(playerID)].totalScore = 0
 	MP.TriggerClientEvent(-1, "requestLevelName", "nil") --TODO: fix this when changing levels somehow
 	MP.TriggerClientEvent(-1, "requestAreaNames", "nil")
 	MP.TriggerClientEvent(-1, "requestLevels", "nil")
@@ -769,6 +776,7 @@ end
 --called whenever a player disconnects from the server
 function onPlayerDisconnect(playerID)
 	gameState.players[MP.GetPlayerName(playerID)] = nil
+	playersOutsideOfRound[MP.GetPlayerName(playerID)] = nil
 	vehicleIDs[MP.GetPlayerName(playerID)] = nil
 end
 
