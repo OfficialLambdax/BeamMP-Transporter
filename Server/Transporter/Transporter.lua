@@ -374,6 +374,7 @@ function transporterGameEnd(reason)
 	else
 		if reason == "time" then
 			MP.SendChatMessage(-1,"Game over, time limit was reached")
+			gameState.endtime = gameState.time + 10
 		elseif reason == "manual" then
 			MP.SendChatMessage(-1,"Game stopped, Everyone Looses")
 			gameState.endtime = gameState.time + 10
@@ -613,7 +614,7 @@ function gameRunningLoop()
 				gameState.players[MP.GetPlayerName(player.ID)].fadeEndTime = gameState.time + 2
 				-- print("A player should have faded cuz he slow af")
 			end
-			if not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 10) then
+			if not player.hasFlag and vehVel[MP.GetPlayerName(player.ID)] and (vehVel[MP.GetPlayerName(player.ID)].vel < 30) then
 				MP.TriggerClientEvent(player.ID, "allowResets", "nil")
 				--TODO: refactor reset system to check all the rules in a single place, do the same for fading. So do all checks where needed and expose bools so rules can be changed easily
 			else
