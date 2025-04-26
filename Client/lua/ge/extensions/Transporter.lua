@@ -231,6 +231,8 @@ local obstaclesPrefabPath
 local obstaclesPrefabName
 local obstaclesPrefabObj
 
+local flagObj -- initialized during init
+
 local flagMarker = {}
 flagMarker.x = 0
 flagMarker.y = 0
@@ -324,7 +326,7 @@ function resetCarColors(data)
 	else
 		for k,serverVehicle in pairs(MPVehicleGE.getVehicles()) do
 			local ID = serverVehicle.gameVehicleID
-			local vehicle = be:getObjectByID(ID)
+			local vehicle = getObjectByID(ID)
 			if vehicle then
 				if serverVehicle.originalColor then
 					vehicle.color = serverVehicle.originalColor
@@ -353,11 +355,11 @@ local function receiveTransporterGameState(data)
 	if not gamestate.gameRunning and data.gameRunning then
 		for k,vehicle in pairs(MPVehicleGE.getVehicles()) do
 			local ID = vehicle.gameVehicleID
-			local veh = be:getObjectByID(ID)
+			local veh = getObjectByID(ID)
 			if veh then
-				vehicle.originalColor = be:getObjectByID(ID).color
-				vehicle.originalcolorPalette0 = be:getObjectByID(ID).colorPalette0
-				vehicle.originalcolorPalette1 = be:getObjectByID(ID).colorPalette1
+				vehicle.originalColor = getObjectByID(ID).color
+				vehicle.originalcolorPalette0 = getObjectByID(ID).colorPalette0
+				vehicle.originalcolorPalette1 = getObjectByID(ID).colorPalette1
 			end
 		end
 	end
@@ -400,6 +402,7 @@ end
 
 local function removePrefabs(type)
 	log('D', logTag, "removePrefabs(" .. type .. ") Called" )
+	if flagObj then flagObj:setPosition(vec3(0, 0, -10000)) end
 	if type == "flag" and flagPrefabActive then 
 		removePrefab(flagPrefabName)
 		-- log('D', logTag, "Removing: " .. flagPrefabName)
@@ -519,7 +522,7 @@ end
 local function onCreateFlag()
 	removePrefabs("flag") --if you want to see more than one prefab at a time also remove this line
 	local currentVehID = be:getPlayerVehicleID(0)
-	local veh = be:getObjectByID(currentVehID)
+	local veh = getObjectByID(currentVehID)
 	if not veh then return end   
 	--try fixing commented stuff when you want to see more than one prefab at a time:
 	
@@ -554,7 +557,7 @@ end
 local function onCreateGoal()
 	removePrefabs("goal") --if you want to see more than one prefab at a time also remove this line
 	local currentVehID = be:getPlayerVehicleID(0)
-	local veh = be:getObjectByID(currentVehID)
+	local veh = getObjectByID(currentVehID)
 	if not veh then return end
 	--try fixing commented stuff when you want to see more than one prefab at a time:
 
@@ -635,7 +638,7 @@ end
 
 local function dropPlayerAtCameraNoReset()
 	--COPY OF GAMES SCRIPT FOR F7:
-	local playerVehicle = be:getPlayerVehicle(0)
+	local playerVehicle = getPlayerVehicle(0)
 	if not playerVehicle then return end
 	local pos = core_camera.getPosition()
 	local camDir = core_camera.getForward()
@@ -695,14 +698,14 @@ end
 local function fadePerson(vehID)
 	local alpha = 128
 	if MPVehicleGE.getGameVehicleID(vehID) == -1 then return end
-	vehicle =  be:getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
+	vehicle =  getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
 	vehicle:queueLuaCommand("obj:setGhostEnabled(true)")
 	vehicle:setMeshAlpha(alpha,"",false)
 end
 
 local function unfadePerson(vehID)
 	if MPVehicleGE.getGameVehicleID(vehID) == -1 then return end
-	vehicle =  be:getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
+	vehicle =  getObjectByID(MPVehicleGE.getGameVehicleID(vehID))
 	vehicle:queueLuaCommand("obj:setGhostEnabled(false)")
 	vehicle:setMeshAlpha(1,"")
 end
@@ -858,7 +861,7 @@ local distancecolor = -1
 
 function nametags(ownerName,player,vehicle) --draws flag nametags on people
 	if player and player.hasFlag == true then
-		local veh = be:getObjectByID(vehicle.gameVehicleID)
+		local veh = getObjectByID(vehicle.gameVehicleID)
 		if veh then
 			local vehPos = veh:getPosition()
 			local posOffset = vec3(0,0,2)
@@ -868,7 +871,7 @@ function nametags(ownerName,player,vehicle) --draws flag nametags on people
 end
 
 local function requestVelocity()
-	local veh = be:getObjectByID(be:getPlayerVehicleID(0))
+	local veh = getPlayerVehicle(0)
 	local vehSpeed = veh:getVelocity():len()*3.6
 	if TriggerServerEvent then TriggerServerEvent("setVehVel", vehSpeed) end
 end
@@ -877,7 +880,7 @@ end
 -- 	log('D', logtag, "OnVehicleResetted called")
 -- 	if MPVehicleGE then
 -- 		if MPVehicleGE.isOwn(gameVehicleID) then
--- 			local veh = be:getObjectByID(gameVehicleID)
+-- 			local veh = getObjectByID(gameVehicleID)
 -- 			if veh then
 -- 				if not gamestate.players[veh.ownerName].allowedResets then
 -- 					local txt = ""
@@ -900,7 +903,7 @@ local function color(player,vehicle,team,dt)
 			vehicle.transition = 1
 			vehicle.colortimer = 1.6
 		end
-		local veh = be:getObjectByID(vehicle.gameVehicleID)
+		local veh = getObjectByID(vehicle.gameVehicleID)
 		if veh then
 			if not vehicle.originalColor then
 				vehicle.originalColor = veh.color
@@ -966,8 +969,8 @@ end
 local function onPreRender(dt)
 	if not gamestate then return end
 	local currentVehID = be:getPlayerVehicleID(0)
-	if not gamestate.gameRunning or gamestate.gameEnding then 
-		local veh = be:getObjectByID(currentVehID)
+	if not gamestate.gameRunning or gamestate.gameEnding then
+		local veh = getObjectByID(currentVehID)
 		if veh then
 			local uiData = {}
 			uiData.gameRunning = false or gamestate.gameEnding
@@ -985,13 +988,12 @@ local function onPreRender(dt)
 			uiData.goalX = -140
 			uiData.goalY = -140
 			uiData.goalAngle = goalMarker.arrowAngle
-			uiData.showMSGYouWin = uiMessages.showMSGYouWin	
-			uiData.showMSGYouLose = uiMessages.showMSGYouLose		
-			veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
+			uiData.showMSGYouWin = uiMessages.showMSGYouWin
+			uiData.showMSGYouLose = uiMessages.showMSGYouLose
+			veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')') -- why is this relayed over the ve vm instead of being directly send to the ui?
 		end
 		return 
 	end
-	local currentVehID = be:getPlayerVehicleID(0)
 	local currentOwnerName = MPConfig.getNickname()
 	if currentVehID and MPVehicleGE.getVehicleByGameID(currentVehID) then
 		currentOwnerName = MPVehicleGE.getVehicleByGameID(currentVehID).ownerName
@@ -1008,12 +1010,23 @@ local function onPreRender(dt)
 				nametags(currentOwnerName,player,vehicle)
 				if player.hasFlag then
 					if core_camera.getForward() then
-						local myVeh = be:getObjectByID(currentVehID)
-						local veh = be:getObjectByID(vehicle.gameVehicleID)	
-						if myVeh and veh then 
+						local myVeh = getObjectByID(currentVehID)
+						local veh = getObjectByID(vehicle.gameVehicleID)	
+						if myVeh and veh then
+							
+							if flagObj then
+								local boundingBox = veh:getSpawnWorldOOBB()
+								local halfExtents = boundingBox:getHalfExtents()
+								local dir = veh:getDirectionVector()
+								local pos = boundingBox:getCenter() + (dir * -halfExtents.y)
+								pos.z = pos.z + halfExtents.z + 1
+								local rot = quatFromDir(dir:cross(vec3(0, 0, 1)), vec3(0, 0, 1))
+								flagObj:setPosRot(pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, rot.w)
+							end
+							
 							local vehPos = myVeh:getPosition()
-							local flagVehPos = veh:getPosition()	
-							if flagVehPos.z > vehPos.z + 5 then 
+							local flagVehPos = veh:getPosition()
+							if flagVehPos.z > vehPos.z + 5 then
 								flagMarker.abovePlayer = true
 								flagMarker.showHeightArrow = true 
 							elseif flagVehPos.z < vehPos.z - 5 then
@@ -1039,8 +1052,8 @@ local function onPreRender(dt)
 				end
 				color(player,vehicle,gamestate.players[vehicle.ownerName].team,dt)
 				if gamestate.players[currentOwnerName] and currentVehID and gamestate.players[currentOwnerName].hasFlag and not gamestate.players[vehicle.ownerName].hasFlag and currentVehID ~= vehicle.gameVehicleID then
-					local myVeh = be:getObjectByID(currentVehID)
-					local veh = be:getObjectByID(vehicle.gameVehicleID)				
+					local myVeh = getObjectByID(currentVehID)
+					local veh = getObjectByID(vehicle.gameVehicleID)				
 					if veh and myVeh then
 						if not gamestate.players[vehicle.ownerName].hasFlag and gamestate.players[vehicle.ownerName].team ~= gamestate.players[currentOwnernam] then
 							local distance = distance(myVeh:getPosition(),veh:getPosition())
@@ -1051,7 +1064,7 @@ local function onPreRender(dt)
 					end
 				end
 				if gamestate.teams then
-					local veh = be:getObjectByID(vehicle.gameVehicleID)	
+					local veh = getObjectByID(vehicle.gameVehicleID)	
 					local vehPos = veh:getPosition()
 					local posOffset = vec3(0,0,1.5)
 					debugDrawer:drawTextAdvanced(vehPos + posOffset, String("Team " .. gamestate.players[vehicle.ownerName].team), ColorF(1,1,1,1), true, false, ColorI(colors[gamestate.players[vehicle.ownerName].team][1], colors[gamestate.players[vehicle.ownerName].team][2], colors[gamestate.players[vehicle.ownerName].team][3], colors[gamestate.players[vehicle.ownerName].team][4]))
@@ -1067,7 +1080,7 @@ local function onPreRender(dt)
 	end
 
 	if flagPrefabActive and flagLocation and flagLocation.z then
-		local veh = be:getObjectByID(currentVehID)	
+		local veh = getObjectByID(currentVehID)	
 		if veh then
 			local vehPos = veh:getPosition()
 			if flagLocation.z + 2 > vehPos.z + 5 then --apparantly the prefablocation is 2 meters off
@@ -1098,7 +1111,7 @@ local function onPreRender(dt)
 	end
 
 	if goalPrefabActive and goalLocation and goalLocation.z then
-		local veh = be:getObjectByID(currentVehID)	
+		local veh = getObjectByID(currentVehID)	
 		if veh then
 			local vehPos = veh:getPosition()
 			if goalLocation.z + 2 > vehPos.z + 5 then 
@@ -1171,7 +1184,7 @@ local function onPreRender(dt)
 	uiData.showMSGYouWin = uiMessages.showMSGYouWin
 	uiData.showMSGYouLose = uiMessages.showMSGYouLose
 
-	local veh = be:getObjectByID(currentVehID)
+	local veh = getObjectByID(currentVehID)
 	if veh then
 		veh:queueLuaCommand('gui.send(\'Transporter\',' .. serialize(uiData) ..')')
 	end
@@ -1186,39 +1199,57 @@ local function onExtensionUnloaded()
 	resetCarColors()
 end
 
-if MPGameNetwork then AddEventHandler("resetCarColors", resetCarColors) end
-if MPGameNetwork then AddEventHandler("spawnFlag", spawnFlag) end
-if MPGameNetwork then AddEventHandler("spawnGoal", spawnGoal) end
-if MPGameNetwork then AddEventHandler("onCreateFlag", onCreateFlag) end
-if MPGameNetwork then AddEventHandler("onCreateGoal", onCreateGoal) end
-if MPGameNetwork then AddEventHandler("spawnObstacles", spawnObstacles) end
-if MPGameNetwork then AddEventHandler("removePrefabs", removePrefabs) end 
-if MPGameNetwork then AddEventHandler("setCurrentArea", setCurrentArea) end
-if MPGameNetwork then AddEventHandler("requestLevelName", requestLevelName) end 
-if MPGameNetwork then AddEventHandler("requestAreaNames", requestAreaNames) end
-if MPGameNetwork then AddEventHandler("requestLevels", requestLevels) end
-if MPGameNetwork then AddEventHandler("requestFlagCount", requestFlagCount) end
-if MPGameNetwork then AddEventHandler("requestGoalCount", requestGoalCount) end
-if MPGameNetwork then AddEventHandler("receiveTransporterGameState", receiveTransporterGameState) end
-if MPGameNetwork then AddEventHandler("requestTransporterGameState", requestTransporterGameState) end
-if MPGameNetwork then AddEventHandler("updateTransporterGameState", updateTransporterGameState) end
-if MPGameNetwork then AddEventHandler("sendTransporterContact", sendTransporterContact) end
-if MPGameNetwork then AddEventHandler("allowResets", allowResets) end
-if MPGameNetwork then AddEventHandler("disallowResets", disallowResets) end
-if MPGameNetwork then AddEventHandler("onGameEnd", onGameEnd) end
-if MPGameNetwork then AddEventHandler("onGotFlag", onGotFlag) end
-if MPGameNetwork then AddEventHandler("onLostFlag", onLostFlag) end
-if MPGameNetwork then AddEventHandler("onFlagReset", onFlagReset) end
-if MPGameNetwork then AddEventHandler("onScore", onScore) end
-if MPGameNetwork then AddEventHandler("onWin", onWin) end
-if MPGameNetwork then AddEventHandler("onLose", onLose) end
-if MPGameNetwork then AddEventHandler("fadePerson", fadePerson) end
-if MPGameNetwork then AddEventHandler("unfadePerson", unfadePerson) end
-if MPGameNetwork then AddEventHandler("requestVehicleID", requestVehicleID) end
-if MPGameNetwork then AddEventHandler("requestVelocity", requestVelocity) end
+local function onWorldReadyState(state)
+	if state ~= 2 then return end
+	
+	loadJsonMaterialsFile("art/shapes/Transporter/flag_red/main.materials.json")
+	loadJsonMaterialsFile("art/shapes/Transporter/flag_blue/main.materials.json")
+	
+	flagObj = createObject("TSStatic")
+	flagObj.shapeName = "art/shapes/Transporter/flag_blue/flag_blue_anim.dae"
+	flagObj.dynamic = true
+	flagObj.useInstanceRenderData = 1
+	flagObj:setPosition(vec3(0, 0, -10000))
+	flagObj.scale = vec3(0.5, 0.5, 0.5)
+	flagObj:registerObject("Transporter_Flag")
+end
 
--- if MPGameNetwork then AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger) end
--- if MPGameNetwork then AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger) end
+if AddEventHandler then
+	AddEventHandler("resetCarColors", resetCarColors)
+	AddEventHandler("spawnFlag", spawnFlag)
+	AddEventHandler("spawnGoal", spawnGoal)
+	AddEventHandler("onCreateFlag", onCreateFlag)
+	AddEventHandler("onCreateGoal", onCreateGoal)
+	AddEventHandler("spawnObstacles", spawnObstacles)
+	AddEventHandler("removePrefabs", removePrefabs)
+	AddEventHandler("setCurrentArea", setCurrentArea)
+	AddEventHandler("requestLevelName", requestLevelName)
+	AddEventHandler("requestAreaNames", requestAreaNames)
+	AddEventHandler("requestLevels", requestLevels)
+	AddEventHandler("requestFlagCount", requestFlagCount)
+	AddEventHandler("requestGoalCount", requestGoalCount)
+	AddEventHandler("receiveTransporterGameState", receiveTransporterGameState)
+	AddEventHandler("requestTransporterGameState", requestTransporterGameState)
+	AddEventHandler("updateTransporterGameState", updateTransporterGameState)
+	AddEventHandler("sendTransporterContact", sendTransporterContact)
+	AddEventHandler("allowResets", allowResets)
+	AddEventHandler("disallowResets", disallowResets)
+	AddEventHandler("onGameEnd", onGameEnd)
+	AddEventHandler("onGotFlag", onGotFlag)
+	AddEventHandler("onLostFlag", onLostFlag)
+	AddEventHandler("onFlagReset", onFlagReset)
+	AddEventHandler("onScore", onScore)
+	AddEventHandler("onWin", onWin)
+	AddEventHandler("onLose", onLose)
+	AddEventHandler("fadePerson", fadePerson)
+	AddEventHandler("unfadePerson", unfadePerson)
+	AddEventHandler("requestVehicleID", requestVehicleID)
+	AddEventHandler("requestVelocity", requestVelocity)
+	
+	-- AddEventHandler("onTransporterFlagTrigger", onTransporterFlagTrigger)
+	-- AddEventHandler("onTransporterGoalTrigger", onTransporterGoalTrigger)
+end
+
 
 M.requestTransporterGameState = requestTransporterGameState
 M.receiveTransporterGameState = receiveTransporterGameState
@@ -1242,6 +1273,7 @@ M.setCurrentArea = setCurrentArea
 M.onExtensionUnloaded = onExtensionUnloaded
 M.onResetGameplay = onResetGameplay
 M.onGameEnd = onGameEnd
+M.onWorldReadyState = onWorldReadyState
 M.allowResets = allowResets
 M.disallowResets = disallowResets
 M.onLostFlag = onLostFlag
