@@ -402,7 +402,6 @@ end
 
 local function removePrefabs(type)
 	log('D', logTag, "removePrefabs(" .. type .. ") Called" )
-	if flagObj then flagObj:setPosition(vec3(0, 0, -10000)) end
 	if type == "flag" and flagPrefabActive then 
 		removePrefab(flagPrefabName)
 		-- log('D', logTag, "Removing: " .. flagPrefabName)
@@ -970,6 +969,7 @@ local function onPreRender(dt)
 	if not gamestate then return end
 	local currentVehID = be:getPlayerVehicleID(0)
 	if not gamestate.gameRunning or gamestate.gameEnding then
+		if flagObj then flagObj:setPosition(vec3(0, 0, -10000)) end
 		local veh = getObjectByID(currentVehID)
 		if veh then
 			local uiData = {}
@@ -1002,6 +1002,7 @@ local function onPreRender(dt)
 	-- log('D', logtag, "onPreRender called")
 
 	local closestOpponent = 100000000
+	local anyoneHasFlag = false
 
 	for k,vehicle in pairs(MPVehicleGE.getVehicles()) do
 		if gamestate.players then
@@ -1009,6 +1010,7 @@ local function onPreRender(dt)
 			if player and currentOwnerName and vehicle then
 				nametags(currentOwnerName,player,vehicle)
 				if player.hasFlag then
+					anyoneHasFlag = true
 					if core_camera.getForward() then
 						local myVeh = getObjectByID(currentVehID)
 						local veh = getObjectByID(vehicle.gameVehicleID)	
@@ -1019,7 +1021,7 @@ local function onPreRender(dt)
 								local halfExtents = boundingBox:getHalfExtents()
 								local dir = veh:getDirectionVector()
 								local pos = boundingBox:getCenter() + (dir * -halfExtents.y)
-								pos.z = pos.z + halfExtents.z + 1
+								pos.z = pos.z + halfExtents.z + 0.7
 								local rot = quatFromDir(dir:cross(vec3(0, 0, 1)), vec3(0, 0, 1))
 								flagObj:setPosRot(pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, rot.w)
 							end
@@ -1071,6 +1073,10 @@ local function onPreRender(dt)
 				end
 			end
 		end
+	end
+	
+	if not anyoneHasFlag and flagObj then
+		flagObj:setPosition(vec3(0, 0, -10000))
 	end
 	
 	if gamestate.players[currentOwnerName].hasFlag then
