@@ -1,0 +1,29 @@
+{
+  "flag_blue_loose": {
+    "name": "flag_blue_loose",
+    "mapTo": "flag_blue_loose",
+    "class": "Material",
+    "Stages": [
+      {
+        "colorMap": "flag_blue_loose_d",
+        "emissive": true,
+        "glow": true,
+        "normalMap": "flag_blue_loose_n.dds"
+      },
+      {
+        "emissive": null,
+        "glow": null
+      },
+      {
+        "emissive": null,
+        "glow": null
+      },
+      {
+        "emissive": null,
+        "glow": null
+      }
+    ],
+    "doubleSided": true,
+    "translucentBlendOp": "None"
+  }
+}
