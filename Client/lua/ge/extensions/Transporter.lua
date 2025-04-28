@@ -1216,7 +1216,7 @@ local function onWorldReadyState(state)
 	flagObj.dynamic = true
 	flagObj.useInstanceRenderData = 1
 	flagObj:setPosition(vec3(0, 0, -10000))
-	flagObj.scale = vec3(0.5, 0.5, 0.5)
+	flagObj.scale = vec3(0.3, 0.5, 0.3)
 	flagObj:registerObject("Transporter_Flag")
 end
 
