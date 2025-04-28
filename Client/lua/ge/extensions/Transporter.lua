@@ -1021,7 +1021,7 @@ local function onPreRender(dt)
 								local halfExtents = boundingBox:getHalfExtents()
 								local dir = veh:getDirectionVector()
 								local pos = boundingBox:getCenter() + (dir * -halfExtents.y)
-								pos.z = pos.z + halfExtents.z + 0.7
+								pos.z = pos.z + halfExtents.z + 0.15
 								local rot = quatFromDir(dir:cross(vec3(0, 0, 1)), vec3(0, 0, 1))
 								flagObj:setPosRot(pos.x, pos.y, pos.z, rot.x, rot.y, rot.z, rot.w)
 							end
